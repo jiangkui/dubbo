@@ -73,6 +73,10 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorZooke
             if (authority != null && authority.length() > 0) {
                 builder = builder.authorization("digest", authority.getBytes());
             }
+            /*
+                fixme jiangkui Curator 是 ZooKeeper 的高级 Api 框架，大大简化 ZooKeeper 的使用。
+                官网地址：https://curator.apache.org/curator-framework/index.html
+             */
             client = builder.build();
             client.getConnectionStateListenable().addListener(new CuratorConnectionStateListener(url));
             client.start();
