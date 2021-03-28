@@ -79,6 +79,29 @@ import static org.apache.dubbo.common.constants.CommonConstants.REMOVE_VALUE_PRE
  * @see org.apache.dubbo.common.extension.Adaptive
  * @see org.apache.dubbo.common.extension.Activate
  */
+
+/**
+ * fixme jiangkui
+ *
+ * SPI完整知识体系：https://github.com/jiangkui/blog/blob/master/blogs/java/SPI.md
+ *
+ * 使用 DubboSpi：https://aysaml.com/articles/2019/12/17/1576579214365.html
+ *
+ * 使用Demo：
+ *     ExtensionLoader<DemoService> loader = ExtensionLoader.getExtensionLoader(DemoService.class);
+ *     // service A
+ *     DemoService serviceA = loader.getExtension("serviceA");
+ *     serviceA.sayHello();
+ *
+ *     // service B
+ *     DemoService serviceB = loader.getExtension("serviceB");
+ *     serviceB.sayHello();
+ * 路径：
+ *      META-INF/dubbo/com.aysaml.spi.DemoService
+ * 内容：
+ *      serviceA = com.aysaml.spi.impl.DemoServiceImplA
+ *      serviceB = com.aysaml.spi.impl.DemoServiceImplB
+ */
 public class ExtensionLoader<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(ExtensionLoader.class);
@@ -426,6 +449,7 @@ public class ExtensionLoader<T> {
             synchronized (holder) {
                 instance = holder.get();
                 if (instance == null) {
+                    // 这里查找并创建实例
                     instance = createExtension(name, wrap);
                     holder.set(instance);
                 }
@@ -624,6 +648,7 @@ public class ExtensionLoader<T> {
 
     @SuppressWarnings("unchecked")
     private T createExtension(String name, boolean wrap) {
+        // 查找点在这里，SPI的方式
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
             throw findException(name);
@@ -756,6 +781,7 @@ public class ExtensionLoader<T> {
             synchronized (cachedClasses) {
                 classes = cachedClasses.get();
                 if (classes == null) {
+                    // 这里
                     classes = loadExtensionClasses();
                     cachedClasses.set(classes);
                 }
@@ -772,6 +798,12 @@ public class ExtensionLoader<T> {
 
         Map<String, Class<?>> extensionClasses = new HashMap<>();
 
+        /*
+            三种查找策略，分别是：
+            - META-INF/dubbo/internal
+            - META-INF/dubbo/
+            - META-INF/services/
+         */
         for (LoadingStrategy strategy : strategies) {
             loadDirectory(extensionClasses, strategy.directory(), type.getName(), strategy.preferExtensionClassLoader(), strategy.overridden(), strategy.excludedPackages());
             loadDirectory(extensionClasses, strategy.directory(), type.getName().replace("org.apache", "com.alibaba"), strategy.preferExtensionClassLoader(), strategy.overridden(), strategy.excludedPackages());

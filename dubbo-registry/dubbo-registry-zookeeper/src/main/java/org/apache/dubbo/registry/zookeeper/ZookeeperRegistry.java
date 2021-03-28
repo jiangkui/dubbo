@@ -71,6 +71,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     private final ConcurrentMap<URL, ConcurrentMap<NotifyListener, ChildListener>> zkListeners = new ConcurrentHashMap<>();
 
+    // zk 客户端
     private final ZookeeperClient zkClient;
 
     public ZookeeperRegistry(URL url, ZookeeperTransporter zookeeperTransporter) {
@@ -78,19 +79,22 @@ public class ZookeeperRegistry extends FailbackRegistry {
         if (url.isAnyHost()) {
             throw new IllegalStateException("registry address == null");
         }
+        // 从 URL 中获得 zk 根节点名称，如果为空，则默认是 dubbo，之后
         String group = url.getParameter(GROUP_KEY, DEFAULT_ROOT);
         if (!group.startsWith(PATH_SEPARATOR)) {
             group = PATH_SEPARATOR + group;
         }
         this.root = group;
+        // 链接 zk 客户端
         zkClient = zookeeperTransporter.connect(url);
+        // 添加监听器
         zkClient.addStateListener((state) -> {
-            if (state == StateListener.RECONNECTED) {
+            if (state == StateListener.RECONNECTED) { // 重连状态，恢复订阅，获取最新的提供者列表
                 logger.warn("Trying to fetch the latest urls, in case there're provider changes during connection loss.\n" +
                         " Since ephemeral ZNode will not get deleted for a connection lose, " +
                         "there's no need to re-register url of this instance.");
                 ZookeeperRegistry.this.fetchLatestAddresses();
-            } else if (state == StateListener.NEW_SESSION_CREATED) {
+            } else if (state == StateListener.NEW_SESSION_CREATED) { // 新的 session 链接，加入重试任务重新注册订阅
                 logger.warn("Trying to re-register urls and re-subscribe listeners of this instance to registry...");
                 try {
                     ZookeeperRegistry.this.recover();
@@ -110,13 +114,16 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     @Override
     public boolean isAvailable() {
+        // zk 是否可用
         return zkClient.isConnected();
     }
 
     @Override
     public void destroy() {
+        // 销毁 registry
         super.destroy();
         try {
+            // 关闭 zk 链接
             zkClient.close();
         } catch (Exception e) {
             logger.warn("Failed to close zookeeper client " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -126,6 +133,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     public void doRegister(URL url) {
         try {
+            // 服务注册，即创建服务对应的 URL 节点
+            // 关于 dynamic，若为 false 时，该数据为持久化节点，当注册方退出时，数据依然保存在注册中心
             zkClient.create(toUrlPath(url), url.getParameter(DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -135,18 +144,28 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     public void doUnregister(URL url) {
         try {
+            // 取消注册，即删除对应的 URL 节点
             zkClient.delete(toUrlPath(url));
         } catch (Throwable e) {
             throw new RpcException("Failed to unregister " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
         }
     }
 
+    /**
+     * 订阅逻辑
+     *
+     * @param url
+     * @param listener
+     */
     @Override
     public void doSubscribe(final URL url, final NotifyListener listener) {
         try {
+            // 通配符 *，订阅所有服务，如监控中心
             if (ANY_VALUE.equals(url.getServiceInterface())) {
                 String root = toRootPath();
+                // 获取 url 对应的监听器，不存在则创建
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
+                // 获取对应的子节点监听器，不存在这创建
                 ChildListener zkListener = listeners.computeIfAbsent(listener, k -> (parentPath, currentChilds) -> {
                     for (String child : currentChilds) {
                         child = URL.decode(child);
@@ -157,9 +176,12 @@ public class ZookeeperRegistry extends FailbackRegistry {
                         }
                     }
                 });
+                // 创建根节点，持久化目录
                 zkClient.create(root, false);
+                // 订阅 service 层服务，即增加相应的子节点监听器
                 List<String> services = zkClient.addChildListener(root, zkListener);
                 if (CollectionUtils.isNotEmpty(services)) {
+                    // 循环订阅
                     for (String service : services) {
                         service = URL.decode(service);
                         anyServices.add(service);
@@ -167,17 +189,22 @@ public class ZookeeperRegistry extends FailbackRegistry {
                                 Constants.CHECK_KEY, String.valueOf(false)), listener);
                     }
                 }
-            } else {
+            } else { // 特定 service 层的订阅
                 List<URL> urls = new ArrayList<>();
                 for (String path : toCategoriesPath(url)) {
+                    // 获取 url 对应的监听器，不存在则创建
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
+                    // 子节点监听器
                     ChildListener zkListener = listeners.computeIfAbsent(listener, k -> (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, k, toUrlsWithEmpty(url, parentPath, currentChilds)));
+                    // 创建 service 目录，持久化
                     zkClient.create(path, false);
+                    // 订阅
                     List<String> children = zkClient.addChildListener(path, zkListener);
                     if (children != null) {
                         urls.addAll(toUrlsWithEmpty(url, path, children));
                     }
                 }
+                // 通知监听器 url 的变化结果
                 notify(url, listener, urls);
             }
         } catch (Throwable e) {
@@ -185,17 +212,27 @@ public class ZookeeperRegistry extends FailbackRegistry {
         }
     }
 
+    /**
+     * 取消订阅逻辑
+     *
+     * @param url
+     * @param listener
+     */
     @Override
     public void doUnsubscribe(URL url, NotifyListener listener) {
+        // 获取 service 的所有监听器
         ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
         if (listeners != null) {
+            // 子节点
             ChildListener zkListener = listeners.get(listener);
             if (zkListener != null) {
+                // 全量订阅处理
                 if (ANY_VALUE.equals(url.getServiceInterface())) {
                     String root = toRootPath();
                     zkClient.removeChildListener(root, zkListener);
-                } else {
+                } else { // 特定 service
                     for (String path : toCategoriesPath(url)) {
+                        // 取消订阅，删除监听器
                         zkClient.removeChildListener(path, zkListener);
                     }
                 }
@@ -203,6 +240,12 @@ public class ZookeeperRegistry extends FailbackRegistry {
         }
     }
 
+    /**
+     * 根据 url 参数查询已经注册的数据
+     *
+     * @param url
+     * @return
+     */
     @Override
     public List<URL> lookup(URL url) {
         if (url == null) {
@@ -211,8 +254,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
         try {
             List<String> providers = new ArrayList<>();
             for (String path : toCategoriesPath(url)) {
+                // 获取路径下所有服务提供者
                 List<String> children = zkClient.getChildren(path);
                 if (children != null) {
+                    // 加入服务提供者列表
                     providers.addAll(children);
                 }
             }
@@ -233,14 +278,29 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return root;
     }
 
+    /**
+     * 获取服务层路径
+     * 例如：/dubbo/com.aysaml.demoService
+     *
+     * @param url
+     * @return
+     */
     private String toServicePath(URL url) {
+        // 接口名
         String name = url.getServiceInterface();
+        // 通配符 *，订阅所有
         if (ANY_VALUE.equals(name)) {
             return toRootPath();
         }
         return toRootDir() + URL.encode(name);
     }
 
+    /**
+     * 批量获取分类路径
+     *
+     * @param url
+     * @return
+     */
     private String[] toCategoriesPath(URL url) {
         String[] categories;
         if (ANY_VALUE.equals(url.getParameter(CATEGORY_KEY))) {
@@ -255,14 +315,38 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return paths;
     }
 
+    /**
+     * 获取分类路径
+     * 例如：/dubbo/com.aysaml.demoService/providers
+     *
+     * @param url
+     * @return
+     */
     private String toCategoryPath(URL url) {
         return toServicePath(url) + PATH_SEPARATOR + url.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
     }
 
+    /**
+     * 获取 URL 路径
+     *
+     * 格式为：Root/Service/Type/URL
+     *
+     * @param url
+     * @return
+     */
     private String toUrlPath(URL url) {
         return toCategoryPath(url) + PATH_SEPARATOR + URL.encode(url.toFullString());
     }
 
+    /**
+     * 获取服务提供者中和消费者匹配的数据
+     *
+     * 不为空的情况
+     *
+     * @param consumer
+     * @param providers
+     * @return
+     */
     private List<URL> toUrlsWithoutEmpty(URL consumer, List<String> providers) {
         List<URL> urls = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(providers)) {
@@ -278,6 +362,16 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return urls;
     }
 
+    /**
+     * 获得与消费者匹配的服务提供者列表
+     *
+     * 如果为空，则返回 empty:// 开头的 url, 可以处理没有服务提供者的情况
+     *
+     * @param consumer
+     * @param path
+     * @param providers
+     * @return
+     */
     private List<URL> toUrlsWithEmpty(URL consumer, String path, List<String> providers) {
         List<URL> urls = toUrlsWithoutEmpty(consumer, providers);
         if (urls == null || urls.isEmpty()) {
@@ -293,6 +387,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
     }
 
     /**
+     * 当Zookeeper连接从连接断开中恢复后，它需要获取最新的服务提供者列表
+     *
      * When zookeeper connection recovered from a connection loss, it need to fetch the latest provider list.
      * re-register watcher is only a side effect and is not mandate.
      */

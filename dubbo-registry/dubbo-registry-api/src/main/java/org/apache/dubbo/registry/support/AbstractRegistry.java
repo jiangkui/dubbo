@@ -93,10 +93,16 @@ public abstract class AbstractRegistry implements Registry {
     // Local disk cache file
     private File file;
 
+    /**
+     * fixme jiangkui
+     * AbstractRegistry 实现了 Registry ，在实现注册和取消注册、订阅和取消订阅功能的基础上面，对注册数据提供了持久化操作保存到文件，以便注册中心在宕机后重新启动恢复服务提供者列表等信息。
+     */
     public AbstractRegistry(URL url) {
         setUrl(url);
+        // 开启本地缓存，默认开启
         if (url.getParameter(REGISTRY__LOCAL_FILE_CACHE_ENABLED, true)) {
             // Start file save timer
+            // 创建本地缓存文件
             syncSaveFile = url.getParameter(REGISTRY_FILESAVE_SYNC_KEY, false);
             String defaultFilename = System.getProperty("user.home") + "/.dubbo/dubbo-registry-" + url.getParameter(APPLICATION_KEY) + "-" + url.getAddress().replaceAll(":", "-") + ".cache";
             String filename = url.getParameter(FILE_KEY, defaultFilename);
@@ -110,9 +116,11 @@ public abstract class AbstractRegistry implements Registry {
                 }
             }
             this.file = file;
+            // 读取本地 properties 缓存文件到内存
             // When starting the subscription center,
             // we need to read the local cache file for future Registry fault tolerance processing.
             loadProperties();
+            // 读取本地 properties 缓存文件到内存
             notify(url.getBackupUrls());
         }
     }
@@ -362,6 +370,11 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * 通知监听器 URL 的变化结果
+     *
+     * 并未实现向注册中心真正的注册，而是简单放入注册的本地变量 registered 中存储。订阅逻辑与之相同。
+     */
     protected void notify(List<URL> urls) {
         if (CollectionUtils.isEmpty(urls)) {
             return;
@@ -426,9 +439,11 @@ public abstract class AbstractRegistry implements Registry {
             String category = entry.getKey();
             List<URL> categoryList = entry.getValue();
             categoryNotified.put(category, categoryList);
+            // 通知监听器
             listener.notify(categoryList);
             // We will update our cache file after each notification.
             // When our Registry has a subscribe failure due to network jitter, we can return at least the existing cache URL.
+            // 保存到文件
             saveProperties(url);
         }
     }

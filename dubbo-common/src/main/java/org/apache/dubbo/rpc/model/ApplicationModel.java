@@ -92,6 +92,12 @@ public class ApplicationModel {
         return (ConfigManager) LOADER.getExtension(ConfigManager.NAME);
     }
 
+    /**
+     * META-INF/dubbo/internal
+     *
+     * 文件：org.apache.dubbo.common.context.FrameworkExt
+     * 内容：repository=org.apache.dubbo.rpc.model.ServiceRepository
+     */
     public static ServiceRepository getServiceRepository() {
         return (ServiceRepository) LOADER.getExtension(ServiceRepository.NAME);
     }

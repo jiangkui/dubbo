@@ -52,8 +52,10 @@ public class DubboBootstrapApplicationListener extends OnceApplicationContextEve
     @Override
     public void onApplicationContextEvent(ApplicationContextEvent event) {
         if (event instanceof ContextRefreshedEvent) {
+            // fixme jiangkui Dubbo Spring 容器触发点 在这里，ContextRefreshedEvent 事件
             onContextRefreshedEvent((ContextRefreshedEvent) event);
         } else if (event instanceof ContextClosedEvent) {
+            // 这里是 Spring 容器关闭事件
             onContextClosedEvent((ContextClosedEvent) event);
         }
     }

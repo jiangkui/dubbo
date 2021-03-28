@@ -892,13 +892,15 @@ public class DubboBootstrap extends GenericEventListener {
                 logger.info(NAME + " is starting...");
             }
             // 1. export Dubbo Services
+            // Dubbo 服务暴露
             exportServices();
 
             // Not only provider register
             if (!isOnlyRegisterProvider() || hasExportedServices()) {
                 // 2. export MetadataService
                 exportMetadataService();
-                //3. Register the local ServiceInstance if required
+                // 3. Register the local ServiceInstance if required
+                // 如果需要，注册本地 ServiceInterface
                 registerServiceInstance();
             }
 
@@ -1078,12 +1080,14 @@ public class DubboBootstrap extends GenericEventListener {
     }
 
     private void exportServices() {
+        // 循环配置中的 service
         configManager.getServices().forEach(sc -> {
             // TODO, compatible with ServiceConfig.export()
             ServiceConfig serviceConfig = (ServiceConfig) sc;
             serviceConfig.setBootstrap(this);
 
             if (exportAsync) {
+                // 异步暴露
                 ExecutorService executor = executorRepository.getServiceExporterExecutor();
                 Future<?> future = executor.submit(() -> {
                     sc.export();
@@ -1091,6 +1095,7 @@ public class DubboBootstrap extends GenericEventListener {
                 });
                 asyncExportingFutures.add(future);
             } else {
+                // 调用 ServiceConfig 的 export() 方法暴露服务，并加入 Map 记录
                 sc.export();
                 exportedServices.add(sc);
             }

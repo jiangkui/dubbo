@@ -33,16 +33,28 @@ import java.util.concurrent.ConcurrentMap;
 import static org.apache.dubbo.common.BaseServiceMetadata.interfaceFromServiceKey;
 import static org.apache.dubbo.common.BaseServiceMetadata.versionFromServiceKey;
 
+/**
+ * ServiceRepository 存储了所有服务端发布的服务、客户端需要访问的服务，通过 ServiceRepository 可以获取所有本 dubbo 实例发布的服务和引用的服务。
+ *
+ * 由调用：org.apache.dubbo.rpc.model.ApplicationModel#getServiceRepository()
+ *
+ * META-INF/dubbo/internal
+ * 文件：org.apache.dubbo.common.context.FrameworkExt
+ * 内容：repository=org.apache.dubbo.rpc.model.ServiceRepository
+ */
 public class ServiceRepository extends LifecycleAdapter implements FrameworkExt {
 
     public static final String NAME = "repository";
 
+    // 本 Dubbo 实例提供的服务，貌似只有 Interface.class 定义
     // services
     private ConcurrentMap<String, ServiceDescriptor> services = new ConcurrentHashMap<>();
 
+    // 本 Dubbo 实例引用的服务，
     // consumers
     private ConcurrentMap<String, ConsumerModel> consumers = new ConcurrentHashMap<>();
 
+    // 本 Dubbo 实例发布的服务
     // providers
     private ConcurrentMap<String, ProviderModel> providers = new ConcurrentHashMap<>();
 

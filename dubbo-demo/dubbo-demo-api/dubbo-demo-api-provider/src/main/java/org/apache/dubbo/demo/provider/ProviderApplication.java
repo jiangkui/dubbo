@@ -39,6 +39,9 @@ public class ProviderApplication {
      * fixme jiangkui 从这里开始
      * API DEMO：https://dubbo.apache.org/zh/docs/v2.7/user/configuration/api/
      * 架构设计：https://dubbo.apache.org/zh/docs/v2.7/dev/design/
+     *
+     * Server 端启动流程
+     * Server 端地址是何时注册到 ZK 上的？启动完成后才注册的吧
      */
     public void simpleDemo() {
         // 服务实现

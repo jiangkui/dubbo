@@ -30,6 +30,12 @@ public class ZookeeperRegistryFactory extends AbstractRegistryFactory {
     private ZookeeperTransporter zookeeperTransporter;
 
     /**
+     * 通过 dubbo SPI ioc 注入 zk 工厂对象
+     *
+     * 详情参见：META-INF/dubbo/internal 的 org.apache.dubbo.registry.RegistryFactory 文件
+     *
+     * 文件内容：ookeeper=org.apache.dubbo.registry.zookeeper.ZookeeperRegistryFactory
+     *
      * Invisible injection of zookeeper client via IOC/SPI
      * @param zookeeperTransporter
      */
