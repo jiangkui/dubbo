@@ -280,13 +280,17 @@ public class DubboProtocol extends AbstractProtocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 获取 URL
         URL url = invoker.getUrl();
 
+        // 创建 DubboExporter
         // export service.
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
+        // 加入缓存
         exporterMap.put(key, exporter);
 
+        // 本地存根相关
         //export an stub service for dispatching event
         Boolean isStubSupportEvent = url.getParameter(STUB_EVENT_KEY, DEFAULT_STUB_EVENT);
         Boolean isCallbackservice = url.getParameter(IS_CALLBACK_SERVICE, false);
@@ -301,47 +305,69 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
+        // 启动本地服务
         openServer(url);
+        // 序列化优化
         optimizeSerialization(url);
 
         return exporter;
     }
 
+    /**
+     * 开启 Netty 相关Server
+     *
+     * @param url
+     */
     private void openServer(URL url) {
+        // 获取本地服务地址，ip:port
         // find server.
         String key = url.getAddress();
         //client can export a service which's only for server to invoke
         boolean isServer = url.getParameter(IS_SERVER_KEY, true);
         if (isServer) {
+            // 缓存中获取通信服务器，防止重复创建
             ProtocolServer server = serverMap.get(key);
             if (server == null) {
+                // 双重校验锁，如果缓存不存在则创建通信 server 并加入缓存
                 synchronized (this) {
                     server = serverMap.get(key);
                     if (server == null) {
+                        // 创建服务器，Netty 相关了
                         serverMap.put(key, createServer(url));
                     }
                 }
             } else {
+                // 若服务器已创建，则根据 url 中的配置重置，在同一台机器上（单网卡），同一个端口上仅允许启动一个服务器实例
                 // server supports reset, use together with override
                 server.reset(url);
             }
         }
     }
 
+    /**
+     * 创建 NettyServer
+     */
     private ProtocolServer createServer(URL url) {
         url = URLBuilder.from(url)
+                // 默认开启 server 关闭时发送 READ_ONLY 事件
                 // send readonly event when server closes, it's enabled by default
                 .addParameterIfAbsent(CHANNEL_READONLYEVENT_SENT_KEY, Boolean.TRUE.toString())
+                // 心跳检测
                 // enable heartbeat by default
                 .addParameterIfAbsent(HEARTBEAT_KEY, String.valueOf(DEFAULT_HEARTBEAT))
+                // 设置编码器为 dubbo
                 .addParameter(CODEC_KEY, DubboCodec.NAME)
                 .build();
+
+        // 获取 server 类型，默认 netty
         String str = url.getParameter(SERVER_KEY, DEFAULT_REMOTING_SERVER);
 
+        // 判断对应的扩展是否存在
         if (str != null && str.length() > 0 && !ExtensionLoader.getExtensionLoader(Transporter.class).hasExtension(str)) {
             throw new RpcException("Unsupported server type: " + str + ", url: " + url);
         }
 
+        // 启动通信服务器
         ExchangeServer server;
         try {
             server = Exchangers.bind(url, requestHandler);
@@ -349,6 +375,7 @@ public class DubboProtocol extends AbstractProtocol {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
         }
 
+        // 判断 client 对应的扩展是否存在
         str = url.getParameter(CLIENT_KEY);
         if (str != null && str.length() > 0) {
             Set<String> supportedTypes = ExtensionLoader.getExtensionLoader(Transporter.class).getSupportedExtensions();

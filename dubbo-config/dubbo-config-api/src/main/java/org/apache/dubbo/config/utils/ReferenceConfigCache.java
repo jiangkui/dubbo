@@ -111,6 +111,7 @@ public class ReferenceConfigCache {
 
         ConcurrentMap<String, Object> proxiesOfType = proxies.get(type);
         proxiesOfType.computeIfAbsent(key, _k -> {
+            // 获取引用实例化对象
             Object proxy = referenceConfig.get();
             referredReferences.put(key, referenceConfig);
             return proxy;

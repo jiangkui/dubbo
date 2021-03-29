@@ -41,6 +41,8 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 
 /**
  * ReferenceFactoryBean
+ *
+ * Spring 在实例化 Dubbo 的 ReferenceBean 时会调用 ReferenceConfig 的 #get 方法获取 bean 实例，执行 Dubbo 服务引用的过程。
  */
 public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         ApplicationContextAware, InitializingBean, DisposableBean {
@@ -65,6 +67,7 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
 
     @Override
     public Object getObject() {
+        // 调用 ReferenceConfig 的 get 方法获取 bean 实例
         return get();
     }
 
@@ -103,6 +106,7 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
     @SuppressWarnings({"unchecked"})
     public void afterPropertiesSet() throws Exception {
 
+        // 初始化 Dubbo config bean
         // Initializes Dubbo's Config Beans before @Reference bean autowiring
         prepareDubboConfigBeans();
 

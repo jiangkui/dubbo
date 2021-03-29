@@ -68,6 +68,8 @@ public class ConsumerApplication {
     }
 
     private static void runWithBootstrap() {
+
+        // Spring 应用实例化是由 ReferenceBean 搞的，很简单
         ReferenceConfig<DemoService> reference = new ReferenceConfig<>();
         reference.setInterface(DemoService.class);
         reference.setGeneric("true");

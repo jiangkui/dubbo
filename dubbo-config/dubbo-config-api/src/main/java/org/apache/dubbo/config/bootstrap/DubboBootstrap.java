@@ -887,6 +887,7 @@ public class DubboBootstrap extends GenericEventListener {
     public DubboBootstrap start() {
         if (started.compareAndSet(false, true)) {
             ready.set(false);
+            // 各种配置初始化？？？
             initialize();
             if (logger.isInfoEnabled()) {
                 logger.info(NAME + " is starting...");
