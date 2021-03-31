@@ -441,18 +441,26 @@ public class RegistryProtocol implements Protocol {
         return key;
     }
 
+    /**
+     * 通过 refer 来构建 Invoker 实体
+     */
     @Override
     @SuppressWarnings("unchecked")
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // 通过参数获取 Registry 的协议，并将其设置为协议头
         url = getRegistryUrl(url);
+        // 获取注册中心实例
         Registry registry = registryFactory.getRegistry(url);
         if (RegistryService.class.equals(type)) {
             return proxyFactory.getInvoker((T) registry, type, url);
         }
 
         // group="a,b" or group="*"
+        // url 查询字符串转换为 map
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
+        // 获取 group 配置
         String group = qs.get(GROUP_KEY);
+        // 多个 group
         if (group != null && group.length() > 0) {
             if ((COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {
                 return doRefer(Cluster.getCluster(MergeableCluster.NAME), registry, type, url, qs);
@@ -460,6 +468,7 @@ public class RegistryProtocol implements Protocol {
         }
 
         Cluster cluster = Cluster.getCluster(qs.get(CLUSTER_KEY));
+        // 创建引用，要解决几个问题：
         return doRefer(cluster, registry, type, url, qs);
     }
 

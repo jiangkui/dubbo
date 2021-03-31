@@ -328,16 +328,17 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
      *
      * 案例：ORIGIN_CONFIG -> {ServiceConfig@2107} "<dubbo:service unexported="false" exported="true" />"
      *
-     * 方法代码较长，分支较多，需要小伙伴耐心看。代码容易理解，只是参数非常多。上面说了，URL 参数时 Dubbo 的每个扩展点通信的同一参数，所以这个方法比较重要的一部分是组装 URL 参数。
+     * 方法代码较长，分支较多，需要小伙伴耐心看。代码容易理解，只是参数非常多。上面说了，URL 参数是 Dubbo 的每个扩展点通信的同一参数，所以这个方法比较重要的一部分是组装 URL 参数。
      */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
-        // 协议名
+        // 协议名：dubbo
         String name = protocolConfig.getName();
         if (StringUtils.isEmpty(name)) {
             // 如果协议名为空，设置成默认 dubbo
             name = DUBBO;
         }
 
+        //fixme jiangkui 看到这里
         Map<String, String> map = new HashMap<String, String>();
         map.put(SIDE_KEY, PROVIDER_SIDE);
 
@@ -573,7 +574,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
     private void doExportUrls() {
         // ServiceRepository 存储了所有服务端发布的服务、客户端需要访问的服务，通过 ServiceRepository 可以获取所有本 dubbo 实例发布的服务和引用的服务。
         ServiceRepository repository = ApplicationModel.getServiceRepository();
-        ServiceDescriptor serviceDescriptor = repository.registerService(getInterfaceClass());
+        ServiceDescriptor serviceDescriptor = repository.registerService(getInterfaceClass()); // 服务描述符
         // 服务加入 ServiceRepository
         repository.registerProvider(
                 getUniqueServiceName(),
@@ -597,7 +598,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             repository.registerService(pathKey, interfaceClass);
             // TODO, uncomment this line once service key is unified
             serviceMetadata.setServiceKey(pathKey);
-            // URL 组装
+            // URL 组装，registryURLs：registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&dubbo=2.0.2&pid=60912&registry=zookeeper&timestamp=1617072069382
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }

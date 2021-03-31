@@ -71,7 +71,11 @@ public class AdaptiveClassCodeGenerator {
 
     private String defaultExtName;
 
+    /**
+     * AdaptiveClassCodeGenerator 类大约有 400 行的代码，这也是 Dubbo 自适应扩展机制的核心，接下来会用较长的篇幅来说明。
+     */
     public AdaptiveClassCodeGenerator(Class<?> type, String defaultExtName) {
+        // type 为扩展类的接口类型，defaultExtName 为 @SPI 中指定的默认扩展。
         this.type = type;
         this.defaultExtName = defaultExtName;
     }
@@ -88,15 +92,32 @@ public class AdaptiveClassCodeGenerator {
      */
     public String generate() {
         // no need to generate adaptive class since there's no adaptive method found.
+        // 判断类方法是否有 @Adaptive 注解
         if (!hasAdaptiveMethod()) {
             throw new IllegalStateException("No adaptive method exist on extension " + type.getName() + ", refuse to create the adaptive class!");
         }
 
+        // 类结构生成，package/import/class
         StringBuilder code = new StringBuilder();
+        // package + type 所在包
         code.append(generatePackageInfo());
+        // import + ExtensionLoader全限定名
         code.append(generateImports());
+        // public class + type简单名称 + $Adaptive + implements + type全限定名 + {
         code.append(generateClassDeclaration());
 
+        /*
+            以 org.apache.dubbo.rpc.cluster.Cluster 为例，目前生成以下代码（还没方法）：
+
+            package org.apache.dubbo.rpc.cluster;
+            import org.apache.dubbo.common.extension.ExtensionLoader;
+            public class Cluster$Adaptive implements org.apache.dubbo.rpc.cluster.Cluster {
+                // 省略方法代码
+            }
+
+         */
+
+        // 生成方法
         Method[] methods = type.getMethods();
         for (Method method : methods) {
             code.append(generateMethod(method));
@@ -154,12 +175,19 @@ public class AdaptiveClassCodeGenerator {
 
     /**
      * generate method declaration
+     *
+     * 生成方法声明
      */
     private String generateMethod(Method method) {
+        // 返回类型
         String methodReturnType = method.getReturnType().getCanonicalName();
+        // 方法名
         String methodName = method.getName();
+        // 方法内容，内部会对 @Adaptive 标记的方法做处理
         String methodContent = generateMethodContent(method);
+        // 参数
         String methodArgs = generateMethodArguments(method);
+        // 异常
         String methodThrows = generateMethodThrows(method);
         return String.format(CODE_METHOD_DECLARATION, methodReturnType, methodName, methodArgs, methodThrows, methodContent);
     }
@@ -196,34 +224,55 @@ public class AdaptiveClassCodeGenerator {
 
     /**
      * generate method content
+     *
+     * 生成方法体
+     *
+     * 在这个方法中开始就执行了获取 URL 参数的逻辑。我们知道在 Dubbo 中 URL 主要作用是为扩展点间传递数据，在 URL 中除了一些比较重要的值外，使用键值对的形式传递。
+     *
+     * 组成 URL 的具体参数：
+     *
+     * protocol：一般是 dubbo 中的各种协议 如：dubbo thrift http zk
+     * username/password：用户名/密码
+     * host/port：主机/端口
+     * path：接口名称
+     * parameters：参数键值对
+     * 回到这里讲的 Dubbo 自适应扩展机制，这里 URL 中携带了要执行的目标扩展名称。
      */
     private String generateMethodContent(Method method) {
+        // 获取方法的 @Adaptive 注解
         Adaptive adaptiveAnnotation = method.getAnnotation(Adaptive.class);
         StringBuilder code = new StringBuilder(512);
+        // 若注解为空则抛出异常
         if (adaptiveAnnotation == null) {
             return generateUnsupported(method);
         } else {
+            // 获取 URL 参数的下标
             int urlTypeIndex = getUrlTypeIndex(method);
 
             // found parameter in URL type
+            // 参数列表中存在 URL 类型的参数
             if (urlTypeIndex != -1) {
                 // Null Point check
+                // 为空抛出异常校验，url 赋值
                 code.append(generateUrlNullCheck(urlTypeIndex));
             } else {
                 // did not find parameter in URL type
+                // 没有找到 URL 参数，调用类似 getUrl 的 getter 方法获取
                 code.append(generateUrlAssignmentIndirectly(method));
             }
 
+            // 获取 @Adaptive 注解的 value 值
             String[] value = getMethodAdaptiveValue(adaptiveAnnotation);
 
+            // 参数总是否有 Invocation 类型的
             boolean hasInvocation = hasInvocationArgument(method);
-
+            // Invocation 类型参数空值校验
             code.append(generateInvocationArgumentNullCheck(method));
-
+            // ***生成拓展名获取逻辑***
             code.append(generateExtNameAssignment(value, hasInvocation));
             // check extName == null?
             code.append(generateExtNameNullCheck(value));
-
+            // 生成使用 SPI 加载扩展类代码
             code.append(generateExtensionAssignment());
 
             // return statement

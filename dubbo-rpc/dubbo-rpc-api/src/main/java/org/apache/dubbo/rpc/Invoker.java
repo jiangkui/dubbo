@@ -21,6 +21,10 @@ import org.apache.dubbo.common.Node;
 /**
  * Invoker. (API/SPI, Prototype, ThreadSafe)
  *
+ * Invoker 作为 Dubbo 的通用模型，代表着一个可执行体。
+ * 在服务提供者来看，Invoker 用于调用真实的服务实现类；
+ * 而在服务消费者来看，Invoker 用于执行远程调用，在上面创建代理的方法中，我们注意到创建 Invoker 的一个关键方法 Protocol#refer(Class<T> type, URL url) 。
+ *
  * @see org.apache.dubbo.rpc.Protocol#refer(Class, org.apache.dubbo.common.URL)
  * @see org.apache.dubbo.rpc.InvokerListener
  * @see org.apache.dubbo.rpc.protocol.AbstractInvoker

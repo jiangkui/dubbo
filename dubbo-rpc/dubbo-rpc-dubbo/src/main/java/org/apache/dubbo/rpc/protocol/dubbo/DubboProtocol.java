@@ -427,12 +427,18 @@ public class DubboProtocol extends AbstractProtocol {
         optimizeSerialization(url);
 
         // create rpc invoker.
+        // 方法用于获取客户端实例，实例类型为 ExchangeClient。
         DubboInvoker<T> invoker = new DubboInvoker<T>(serviceType, url, getClients(url), invokers);
         invokers.add(invoker);
 
         return invoker;
     }
 
+    /**
+     * 获取客户端实例，实例类型为 ExchangeClient。
+     *
+     * ExchangeClient 实际上并不具备通信能力，它需要基于更底层的客户端实例进行通信。比如 NettyClient、MinaClient 等，默认情况下，Dubbo 使用 NettyClient 进行通信。
+     */
     private ExchangeClient[] getClients(URL url) {
         // whether to share connection
 
@@ -468,6 +474,8 @@ public class DubboProtocol extends AbstractProtocol {
 
     /**
      * Get shared connection
+     *
+     * 获取共享连接
      *
      * @param url
      * @param connectNum connectNum must be greater than or equal to 1
