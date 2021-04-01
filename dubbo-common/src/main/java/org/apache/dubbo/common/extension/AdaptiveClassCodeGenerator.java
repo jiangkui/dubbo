@@ -89,6 +89,62 @@ public class AdaptiveClassCodeGenerator {
 
     /**
      * generate and return class code
+     *
+     * 以扩展点：org.apache.dubbo.rpc.ProxyFactory 为例，生成的文件如下，是一个 class 文件，每个方法内都插入了关键的点：
+     *  - 查找用户指定的配置：从参数内的 URL 或 Invoker.getURL()，来查找用户的 url
+     *  - 根据配置查找实现：ExtensionLoader.getExtensionLoader(xxx).getExtension();
+     *
+     *   package org.apache.dubbo.rpc;
+     *
+     *   import org.apache.dubbo.common.extension.ExtensionLoader;
+     *
+     *   public class ProxyFactory$Adaptive implements org.apache.dubbo.rpc.ProxyFactory {
+     *
+     *       public org.apache.dubbo.rpc.Invoker getInvoker(java.lang.Object arg0, java.lang.Class arg1, org.apache.dubbo.common.URL arg2) throws org.apache.dubbo.rpc.RpcException {
+     *           if (arg2 == null) {
+     *              throw new IllegalArgumentException("url == null");
+     *           }
+     *           org.apache.dubbo.common.URL url = arg2;
+     *           String extName = url.getParameter("proxy", "javassist");
+     *           if (extName == null) {
+     *              throw new IllegalStateException("Failed to get extension (org.apache.dubbo.rpc.ProxyFactory) name from url (" + url.toString() + ") use keys([proxy])");
+     *           }
+     *           org.apache.dubbo.rpc.ProxyFactory extension = (org.apache.dubbo.rpc.ProxyFactory) ExtensionLoader.getExtensionLoader(org.apache.dubbo.rpc.ProxyFactory.class).getExtension(extName);
+     *           return extension.getInvoker(arg0, arg1, arg2);
+     *       }
+     *
+     *       public java.lang.Object getProxy(org.apache.dubbo.rpc.Invoker arg0, boolean arg1) throws org.apache.dubbo.rpc.RpcException {
+     *           if (arg0 == null) {
+     *              throw new IllegalArgumentException("org.apache.dubbo.rpc.Invoker argument == null");
+     *           }
+     *           if (arg0.getUrl() == null) {
+     *              throw new IllegalArgumentException("org.apache.dubbo.rpc.Invoker argument getUrl() == null");
+     *           }
+     *           org.apache.dubbo.common.URL url = arg0.getUrl();
+     *           String extName = url.getParameter("proxy", "javassist");
+     *           if (extName == null) {
+     *              throw new IllegalStateException("Failed to get extension (org.apache.dubbo.rpc.ProxyFactory) name from url (" + url.toString() + ") use keys([proxy])");
+     *           }
+     *           org.apache.dubbo.rpc.ProxyFactory extension = (org.apache.dubbo.rpc.ProxyFactory) ExtensionLoader.getExtensionLoader(org.apache.dubbo.rpc.ProxyFactory.class).getExtension(extName);
+     *           return extension.getProxy(arg0, arg1);
+     *       }
+     *
+     *       public java.lang.Object getProxy(org.apache.dubbo.rpc.Invoker arg0) throws org.apache.dubbo.rpc.RpcException {
+     *           if (arg0 == null) {
+     *              throw new IllegalArgumentException("org.apache.dubbo.rpc.Invoker argument == null");
+     *           }
+     *           if (arg0.getUrl() == null) {
+     *              throw new IllegalArgumentException("org.apache.dubbo.rpc.Invoker argument getUrl() == null");
+     *           }
+     *           org.apache.dubbo.common.URL url = arg0.getUrl();
+     *           String extName = url.getParameter("proxy", "javassist");
+     *           if (extName == null) {
+     *              throw new IllegalStateException("Failed to get extension (org.apache.dubbo.rpc.ProxyFactory) name from url (" + url.toString() + ") use keys([proxy])");
+     *           }
+     *           org.apache.dubbo.rpc.ProxyFactory extension = (org.apache.dubbo.rpc.ProxyFactory) ExtensionLoader.getExtensionLoader(org.apache.dubbo.rpc.ProxyFactory.class).getExtension(extName);
+     *           return extension.getProxy(arg0);
+     *       }
+     *   }
      */
     public String generate() {
         // no need to generate adaptive class since there's no adaptive method found.
@@ -105,17 +161,6 @@ public class AdaptiveClassCodeGenerator {
         code.append(generateImports());
         // public class + type简单名称 + $Adaptive + implements + type全限定名 + {
         code.append(generateClassDeclaration());
-
-        /*
-            以 org.apache.dubbo.rpc.cluster.Cluster 为例，目前生成以下代码（还没方法）：
-
-            package org.apache.dubbo.rpc.cluster;
-            import org.apache.dubbo.common.extension.ExtensionLoader;
-            public class Cluster$Adaptive implements org.apache.dubbo.rpc.cluster.Cluster {
-                // 省略方法代码
-            }
-
-         */
 
         // 生成方法，对：interface org.apache.dubbo.rpc.ProxyFactory，接口的所有方法都生成代理，注入 获取具体 Extension实例的 核心逻辑，已达到方法调用时，才实例化具体对象。。
         Method[] methods = type.getMethods();

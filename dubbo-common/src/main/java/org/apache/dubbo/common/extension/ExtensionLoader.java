@@ -618,6 +618,14 @@ public class ExtensionLoader<T> {
 
     /**
      * 注入依赖的扩展实例，解决一个问题：启动时不加载，在方法调用时，通过SPI进行加载。
+     *
+     * 处理了两件事情：
+     * - 配置查找：根据 extension type 查找对应的 properties 配置文件。并加载配置到 ExtensionLoader 内。
+     * - 生成代理实现：根据 Extension 的 interface 信息，生成一个 class，适配器模式，为每个方法都加入一个功能代码：
+     *      - 查找用户的配置：从参数内获取用户的 URL，Invoker.getURL()
+     *      - 通过URL解析出：每个方法要使用的实例对象。
+     *          - @SPI("javassist") 表示：是扩展点，并且默认实现是 javassist
+     *          - @Adaptive({"proxy"}) 表示用户通过 url.proxy 来指定配置
      */
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
@@ -739,7 +747,9 @@ public class ExtensionLoader<T> {
     }
 
     /**
-     * Dubbo IOC 依赖注入
+     * Dubbo IOC 依赖注入：两个地方使用：
+     *      - 为 Extension 接口生成 class 对象时，会调用，通过 set 方法注入
+     *      - ExtensionLoader.getExtension() 加载实现类的时候，也要用
      *
      * Dubbo 的依赖注入目前仅有一种，就是通过对象的 setter 方法进行注入。逻辑比较简单，首先获取拓展类的 setter 方法，
      * 然后再通过 objectFactory 的 getExtension 的方法获取依赖的拓展类，然后通过反射调用 setter 方法进行依赖注入。
