@@ -439,6 +439,11 @@ public class ExtensionLoader<T> {
     /**
      * Find the extension with the given name. If the specified name is not found, then {@link IllegalStateException}
      * will be thrown.
+     *
+     * @param name 就是以下这三个路径中配置文件，等号之前的值。
+     *              - META-INF/dubbo/intern
+     *              - META-INF/dubbo/
+     *              - META-INF/services/
      */
     @SuppressWarnings("unchecked")
     public T getExtension(String name) {
@@ -853,7 +858,7 @@ public class ExtensionLoader<T> {
      * synchronized in getExtensionClasses
      */
     private Map<String, Class<?>> loadExtensionClasses() {
-        // 获取接口的 @SPI 注解，这里就是当初为什么拓展类接口必须标注 @SPI 的原因，哈哈哈
+        // 获取默认的 Extension 默认的扩展点配置名称，即@SPI注解上标的名称。如果用户 url 内不指定扩展点的格式，则使用默认扩展点。获取接口的 @SPI 注解，这里就是当初为什么拓展类接口必须标注 @SPI 的原因，哈哈哈
         // type.getName() == @SPI
         cacheDefaultExtensionName();
 
@@ -1170,7 +1175,7 @@ public class ExtensionLoader<T> {
      * Dubbo 的自适应扩展机制中自己生成了自适应扩展的代理类，如此，不需在框架启动阶段就通过 SPI 加载所有的实现类，就可以在运行期通过动态参数调用扩展方法。
      */
     private Class<?> createAdaptiveExtensionClass() {
-        // 通过 AdaptiveClassCodeGenerator 构建自适应扩展类代码
+        // 通过 AdaptiveClassCodeGenerator 构建自适应扩展类代码，type：Extension 接口（interface org.apache.dubbo.rpc.ProxyFactory），cacheDefaultName（javassist）：用户不标注扩展点实现的话，默认采用 接口 @SPI 注解上对应的实现。
         String code = new AdaptiveClassCodeGenerator(type, cachedDefaultName).generate();
         // 获取类加载器
         ClassLoader classLoader = findClassLoader();

@@ -117,7 +117,7 @@ public class AdaptiveClassCodeGenerator {
 
          */
 
-        // 生成方法
+        // 生成方法，对：interface org.apache.dubbo.rpc.ProxyFactory，接口的所有方法都生成代理，注入 获取具体 Extension实例的 核心逻辑，已达到方法调用时，才实例化具体对象。。
         Method[] methods = type.getMethods();
         for (Method method : methods) {
             code.append(generateMethod(method));
@@ -268,11 +268,16 @@ public class AdaptiveClassCodeGenerator {
             boolean hasInvocation = hasInvocationArgument(method);
             // Invocation 类型参数空值校验
             code.append(generateInvocationArgumentNullCheck(method));
+            // 【关键点】扩展名获取方式
+            // 【关键点】扩展名获取方式
             // ***生成拓展名获取逻辑***
             code.append(generateExtNameAssignment(value, hasInvocation));
             // check extName == null?
             code.append(generateExtNameNullCheck(value));
-            // 生成使用 SPI 加载扩展类代码
+            // 【关键点】插入代码 ExtensionLoader.getExtension("扩展名")
+            // 【关键点】插入代码 ExtensionLoader.getExtension("扩展名")
+            // 生成使用 SPI 加载扩展类代码，插入关键点代码：
+            // ProxyFactory extension = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getExtension("properties 文件的前缀");
             code.append(generateExtensionAssignment());
 
             // return statement
@@ -290,14 +295,23 @@ public class AdaptiveClassCodeGenerator {
     }
 
     /**
-     * generate extName assigment code
+     * 生成扩展名获取逻辑方法：generate extName assigment code
+     *
+     * 代码的分支虽然多，但是只做了一件事情，生成获取扩展名的代码。根据不同情况，生成的代码例子可以直观的看下面：
+     * - String extName = (url.getProtocol() == null ? "dubbo" : url.getProtocol());
+     * - String extName = url.getMethodParameter(methodName, "loadbalance", "random");
+     * - String extName = url.getParameter("client", url.getParameter("transporter", "netty"));
+     * - String extName = url.getParameter("client", url.getParameter("transporter", "netty"));
      */
     private String generateExtNameAssignment(String[] value, boolean hasInvocation) {
         // TODO: refactor it
         String getNameCode = null;
+        // value 是 @Adaptive 的值，主要逻辑是生成从 URL 中获取扩展名的代码
         for (int i = value.length - 1; i >= 0; --i) {
             if (i == value.length - 1) {
+                // defaultExtName 是 @SPI 中指定的默认扩展名
                 if (null != defaultExtName) {
+                    // 上面也说了 URL 的组成，protocol 可以直接使用 get 方法获取，其他的要从参数 map 中取
                     if (!"protocol".equals(value[i])) {
                         if (hasInvocation) {
                             getNameCode = String.format("url.getMethodParameter(methodName, \"%s\", \"%s\")", value[i], defaultExtName);
@@ -335,9 +349,10 @@ public class AdaptiveClassCodeGenerator {
     }
 
     /**
-     * @return
+     * 插入这段代码：ProxyFactory extension = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getExtension("properties 文件的前缀");
      */
     private String generateExtensionAssignment() {
+        // ProxyFactory extension = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getExtension("properties 文件的前缀");
         return String.format(CODE_EXTENSION_ASSIGNMENT, type.getName(), ExtensionLoader.class.getSimpleName(), type.getName());
     }
 
