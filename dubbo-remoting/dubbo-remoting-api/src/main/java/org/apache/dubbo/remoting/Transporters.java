@@ -75,7 +75,7 @@ public class Transporters {
         return getTransporter().connect(url, handler);
     }
 
-    public static Transporter getTransporter() {
+    public static Transporter getTransporter() { // {Class@2498} "class org.apache.dubbo.remoting.transport.netty4.NettyTransporter" -> netty4
         return ExtensionLoader.getExtensionLoader(Transporter.class).getAdaptiveExtension();
     }
 

@@ -280,11 +280,11 @@ public class DubboProtocol extends AbstractProtocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
-        // 获取 URL
+        // 获取 URL -- dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
         URL url = invoker.getUrl();
 
         // 创建 DubboExporter
-        // export service.
+        // export service. key：org.apache.dubbo.demo.DemoService:20880
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
         // 加入缓存
@@ -292,8 +292,8 @@ public class DubboProtocol extends AbstractProtocol {
 
         // 本地存根相关
         //export an stub service for dispatching event
-        Boolean isStubSupportEvent = url.getParameter(STUB_EVENT_KEY, DEFAULT_STUB_EVENT);
-        Boolean isCallbackservice = url.getParameter(IS_CALLBACK_SERVICE, false);
+        Boolean isStubSupportEvent = url.getParameter(STUB_EVENT_KEY, DEFAULT_STUB_EVENT); // 本地存根(服务提供方想在客户端执行逻辑)，详情参见官方文档：https://dubbo.apache.org/zh/docs/v2.7/user/examples/local-stub/
+        Boolean isCallbackservice = url.getParameter(IS_CALLBACK_SERVICE, false); // 是否是回调，false
         if (isStubSupportEvent && !isCallbackservice) {
             String stubServiceMethods = url.getParameter(STUB_EVENT_METHODS_KEY);
             if (stubServiceMethods == null || stubServiceMethods.length() == 0) {
@@ -305,7 +305,7 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
-        // 启动本地服务
+        // 启动本地服务：url -- dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
         openServer(url);
         // 序列化优化
         optimizeSerialization(url);
@@ -316,21 +316,21 @@ public class DubboProtocol extends AbstractProtocol {
     /**
      * 开启 Netty 相关Server
      *
-     * @param url
+     * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
      */
     private void openServer(URL url) {
         // 获取本地服务地址，ip:port
         // find server.
-        String key = url.getAddress();
+        String key = url.getAddress(); // key -- 11.0.94.189:20880
         //client can export a service which's only for server to invoke
-        boolean isServer = url.getParameter(IS_SERVER_KEY, true);
+        boolean isServer = url.getParameter(IS_SERVER_KEY, true); // true
         if (isServer) {
             // 缓存中获取通信服务器，防止重复创建
             ProtocolServer server = serverMap.get(key);
             if (server == null) {
                 // 双重校验锁，如果缓存不存在则创建通信 server 并加入缓存
                 synchronized (this) {
-                    server = serverMap.get(key);
+                    server = serverMap.get(key); // key -- 11.0.94.189:20880
                     if (server == null) {
                         // 创建服务器，Netty 相关了
                         serverMap.put(key, createServer(url));
@@ -345,10 +345,10 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     /**
-     * 创建 NettyServer
+     * 创建 NettyServer url -- dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
      */
     private ProtocolServer createServer(URL url) {
-        url = URLBuilder.from(url)
+        url = URLBuilder.from(url) // dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
                 // 默认开启 server 关闭时发送 READ_ONLY 事件
                 // send readonly event when server closes, it's enabled by default
                 .addParameterIfAbsent(CHANNEL_READONLYEVENT_SENT_KEY, Boolean.TRUE.toString())
@@ -388,9 +388,9 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     private void optimizeSerialization(URL url) throws RpcException {
-        String className = url.getParameter(OPTIMIZER_KEY, "");
+        String className = url.getParameter(OPTIMIZER_KEY, ""); // className -- ""
         if (StringUtils.isEmpty(className) || optimizers.contains(className)) {
-            return;
+            return; // 走这里
         }
 
         logger.info("Optimizing the serialization process for Kryo, FST, etc...");

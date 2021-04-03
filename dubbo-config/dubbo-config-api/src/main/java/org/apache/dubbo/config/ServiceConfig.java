@@ -329,6 +329,9 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
      * 案例：ORIGIN_CONFIG -> {ServiceConfig@2107} "<dubbo:service unexported="false" exported="true" />"
      *
      * 方法代码较长，分支较多，需要小伙伴耐心看。代码容易理解，只是参数非常多。上面说了，URL 参数是 Dubbo 的每个扩展点通信的同一参数，所以这个方法比较重要的一部分是组装 URL 参数。
+     *
+     * @param protocolConfig 一个对象 ProtocolConfig
+     * @param registryURLs registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&dubbo=2.0.2&pid=60873&registry=zookeeper&timestamp=1617328196333
      */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
         // 协议名：dubbo
@@ -430,7 +433,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
             if (revision != null && revision.length() > 0) {
                 map.put(REVISION_KEY, revision);
             }
-            // 【这里是暴露的接口方法】生成接口 wrapper 包装类，其中包含的接口的详细信息
+            // 【这里是暴露的接口方法】生成接口 wrapper 包装类，其中包含的接口的详细信息，DemoService.sayHello() 和 DemoService.sayHelloAsync()
             String[] methods = Wrapper.getWrapper(interfaceClass).getMethodNames();
             if (methods.length == 0) {
                 logger.warn("No method found in service interface " + interfaceClass.getName());
@@ -485,8 +488,9 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
          *  - scope = none，不导出服务
          *  - scope != remote，导出到本地
          *  - scope != local，导出到远程
+         *  - scope = null, 本地和远程都暴露
          *
-         * 在不指定 scope 时，Dubbo 默认本地和远程都暴露服务，
+         * url：dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=60924&release=&side=provider&timestamp=1617328302566
          */
         String scope = url.getParameter(SCOPE_KEY);
         // don't export when none is configured
@@ -543,9 +547,8 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                         // 持有 Invoker 和 ServiceConfig
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
-                        // 服务暴露，生成 Export
+                        // 服务暴露，生成 Export registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&dubbo=2.0.2&export=dubbo%3A%2F%2F11.0.94.189%3A20880%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-api-provider%26bind.ip%3D11.0.94.189%26bind.port%3D20880%26default%3Dtrue%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%2CsayHelloAsync%26pid%3D94805%26release%3D%26side%3Dprovider%26timestamp%3D1617438260941&pid=94805&registry=zookeeper&timestamp=1617438260908
                         // 执行顺序：Protocol$Adaptive => ProtocolFilterWrapper => ProtocolListenerWrapper => RegistryProtocol => DubboProtocol
-                        // fixme jiangkui 这块没搞清楚，回头再瞅瞅
                         Exporter<?> exporter = PROTOCOL.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
@@ -617,6 +620,31 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                 .setHost(LOCALHOST_VALUE)
                 .setPort(0)
                 .build();
+
+        /*
+            PROXY_FACTORY：
+                - stub=org.apache.dubbo.rpc.proxy.wrapper.StubProxyFactoryWrapper
+                - jdk=org.apache.dubbo.rpc.proxy.jdk.JdkProxyFactory
+                - javassist=org.apache.dubbo.rpc.proxy.javassist.JavassistProxyFactory
+
+            PROTOCOL：
+                - cachedNames：
+                    - org.apache.dubbo.registry.integration.InterfaceCompatibleRegistryProtocol" -> "registry"
+                    - org.apache.dubbo.registry.integration.RegistryProtocol" -> "service-discovery-registry"
+                    - org.apache.dubbo.rpc.protocol.injvm.InjvmProtocol" -> "injvm"
+                    - org.apache.dubbo.rpc.support.MockProtocol" -> "mock"
+                    - org.apache.dubbo.rpc.protocol.dubbo.DubboProtocol" -> "dubbo"
+                - wrapperClasses：
+                    - "class org.apache.dubbo.rpc.protocol.ProtocolFilterWrapper"
+                    - "class org.apache.dubbo.rpc.protocol.ProtocolListenerWrapper"
+
+                    exporter = ListenerExporterWrapper
+                        exporter = InjvmExporter
+                            invoker = FilterNode，内含有8个filter
+                            key = org.apache.dubbo.demo.DemoService
+                            exporterMap = org.apache.dubbo.demo.DemoService --> InjvmExporter
+                        listener = 0
+         */
         Exporter<?> exporter = PROTOCOL.export(
                 PROXY_FACTORY.getInvoker(ref, (Class) interfaceClass, local));
         exporters.add(exporter);

@@ -35,6 +35,8 @@ import java.lang.annotation.Target;
  * Adaptive 注解在类上的情况很少，在 Dubbo 中，仅有两个类被 Adaptive 注解了，分别是 AdaptiveCompiler 和 AdaptiveExtensionFactory。
  * 此种情况，表示拓展的加载逻辑由人工编码完成。更多时候，Adaptive 是注解在接口方法上的，表示拓展的加载逻辑需由框架自动生成。
  *
+ * 如果 @Adaptive 注释在method上，并且没有配置 value，则使用 class.simple 作为value，比如 Protocol类相当于 @Adaptive("protocol")
+ *
  * @see ExtensionLoader
  * @see URL
  */

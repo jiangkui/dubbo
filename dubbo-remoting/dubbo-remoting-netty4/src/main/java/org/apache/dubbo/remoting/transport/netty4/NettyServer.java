@@ -79,7 +79,7 @@ public class NettyServer extends AbstractServer implements RemotingServer {
 
     /**
      * Init and start netty server
-     *
+     * 很熟悉的代码了对吧。
      * @throws Throwable
      */
     @Override
@@ -88,7 +88,7 @@ public class NettyServer extends AbstractServer implements RemotingServer {
 
         bossGroup = NettyEventLoopFactory.eventLoopGroup(1, "NettyServerBoss");
         workerGroup = NettyEventLoopFactory.eventLoopGroup(
-                getUrl().getPositiveParameter(IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
+                getUrl().getPositiveParameter(IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS), // 13
                 "NettyServerWorker");
 
         final NettyServerHandler nettyServerHandler = new NettyServerHandler(getUrl(), this);
@@ -118,7 +118,7 @@ public class NettyServer extends AbstractServer implements RemotingServer {
                 });
         // bind
         ChannelFuture channelFuture = bootstrap.bind(getBindAddress());
-        channelFuture.syncUninterruptibly();
+        channelFuture.syncUninterruptibly(); // syncUninterruptibly()让主线程同步等待子线程结果。
         channel = channelFuture.channel();
 
     }

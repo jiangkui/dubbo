@@ -50,6 +50,19 @@ public class ProtocolFilterWrapper implements Protocol {
 
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
+        /*
+            一共有8个 Filter：
+                0 = {EchoFilter@2481}
+                1 = {ClassLoaderFilter@2482}
+                2 = {GenericFilter@2483}
+                3 = {ContextFilter@2484}
+                4 = {TraceFilter@2485}
+                5 = {TimeoutFilter@2486}
+                6 = {MonitorFilter@2487}
+                7 = {ExceptionFilter@2488}
+
+            last 是一个 FilterNode 结构，内部包含 invoker、last、filter
+         */
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
 
         if (!filters.isEmpty()) {
@@ -70,7 +83,7 @@ public class ProtocolFilterWrapper implements Protocol {
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         if (UrlUtils.isRegistry(invoker.getUrl())) {
-            return protocol.export(invoker);
+            return protocol.export(invoker); // 如果是 registry，则先处理，之后会改成 dubbo，然后再走下面的流程。 fixme jiangkui 搞到这里
         }
         return protocol.export(buildInvokerChain(invoker, SERVICE_FILTER_KEY, CommonConstants.PROVIDER));
     }

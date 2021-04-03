@@ -49,7 +49,7 @@ public interface Protocol {
      * @return exporter reference for exported service, useful for unexport the service later
      * @throws RpcException thrown when error occurs during export the service, for example: port is occupied
      */
-    @Adaptive
+    @Adaptive // 如果 @Adaptive 注释在method上，并且没有配置 value，则使用 class.simple 作为value，比如 Protocol类相当于 @Adaptive("protocol")
     <T> Exporter<T> export(Invoker<T> invoker) throws RpcException;
 
     /**

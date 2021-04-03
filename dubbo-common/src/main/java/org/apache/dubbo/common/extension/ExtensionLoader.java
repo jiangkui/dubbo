@@ -452,6 +452,11 @@ public class ExtensionLoader<T> {
 
     /**
      * 返回指定名字的拓展类对象。 如果名字未找到则抛出 {@link IllegalStateException} 异常。
+     *
+     *  就是以下这三个路径中配置文件，等号之前的值。
+     *   - META-INF/dubbo/intern
+     *   - META-INF/dubbo/
+     *   - META-INF/services/
      */
     public T getExtension(String name, boolean wrap) {
         // 参数验证
@@ -470,7 +475,7 @@ public class ExtensionLoader<T> {
             synchronized (holder) {
                 instance = holder.get();
                 if (instance == null) {
-                    // 这里查找并创建实例
+                    // 这里查找并创建实例，name 是 properties 文件中，等号之前的值，例如：javassist
                     instance = createExtension(name, wrap);
                     holder.set(instance);
                 }
@@ -684,10 +689,14 @@ public class ExtensionLoader<T> {
 
     /**
      * 根据名字创建类拓展对象，有如下几步：
-     * - 获取拓展类实现的所有 class 对象。
-     * - 通过 clazz.newInstance() 方法创建类拓展对象。
+     * - 根据 name 获取示例，例如：injvm --> type全路径名.properties --> 对应的 class
+     *      - 从 ExtensionLoader.type 对应的 properties，查找name（injvm）对应的class
+     *          - 对 class（不是 method ） 的 @Adaptive 适配对象做处理 --> cachedAdaptiveClass
+     *          - 如果是 warp 对象，判断条件：class.construct(type) -->  cachedWrapperClasses
+     *      - 通过 clazz.newInstance() 方法创建类对象。
      * - 通过反射注入依赖的属性。
-     * - 将拓展对象包裹在相应的 Wrapper 对象中。
+     * - warp 处理：
+     *      - 将拓展对象包裹在相应的 Wrapper 对象中。
      */
     @SuppressWarnings("unchecked")
     private T createExtension(String name, boolean wrap) {
@@ -708,9 +717,12 @@ public class ExtensionLoader<T> {
             // 通过反射注入依赖的属性
             injectExtension(instance);
 
-
+            // 进行包装，name = injvm。
+            // 这里是用 wrapper 做一个层级嵌套：按 @Activate(order = 100) 升序排列，instance 的最终结果是：
+            //     instance = ProtocolFilterWrapper
+            //          protocol = ProtocolListenerWrapper
+            //              protocol = InjvmProtocol
             if (wrap) {
-
                 List<Class<?>> wrapperClassesList = new ArrayList<>();
                 if (cachedWrapperClasses != null) {
                     wrapperClassesList.addAll(cachedWrapperClasses);

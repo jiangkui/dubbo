@@ -45,9 +45,9 @@ public abstract class AbstractEndpoint extends AbstractPeer implements Resetable
 
     public AbstractEndpoint(URL url, ChannelHandler handler) {
         super(url, handler);
-        this.codec = getChannelCodec(url);
-        this.timeout = url.getPositiveParameter(TIMEOUT_KEY, DEFAULT_TIMEOUT);
-        this.connectTimeout = url.getPositiveParameter(Constants.CONNECT_TIMEOUT_KEY, Constants.DEFAULT_CONNECT_TIMEOUT);
+        this.codec = getChannelCodec(url); // DubboCountCodec
+        this.timeout = url.getPositiveParameter(TIMEOUT_KEY, DEFAULT_TIMEOUT); // 1000
+        this.connectTimeout = url.getPositiveParameter(Constants.CONNECT_TIMEOUT_KEY, Constants.DEFAULT_CONNECT_TIMEOUT); // 3000
     }
 
     protected static Codec2 getChannelCodec(URL url) {

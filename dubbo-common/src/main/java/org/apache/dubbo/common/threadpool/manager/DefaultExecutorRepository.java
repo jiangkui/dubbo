@@ -74,7 +74,7 @@ public class DefaultExecutorRepository implements ExecutorRepository {
     public synchronized ExecutorService createExecutorIfAbsent(URL url) {
         Map<Integer, ExecutorService> executors = data.computeIfAbsent(EXECUTOR_SERVICE_COMPONENT_KEY, k -> new ConcurrentHashMap<>());
         //issue-7054:Consumer's executor is sharing globally, key=Integer.MAX_VALUE. Provider's executor is sharing by protocol.
-        Integer portKey = CONSUMER_SIDE.equalsIgnoreCase(url.getParameter(SIDE_KEY)) ? Integer.MAX_VALUE : url.getPort();
+        Integer portKey = CONSUMER_SIDE.equalsIgnoreCase(url.getParameter(SIDE_KEY)) ? Integer.MAX_VALUE : url.getPort(); // 20880
         ExecutorService executor = executors.computeIfAbsent(portKey, k -> createExecutor(url));
         // If executor has been shut down, create a new one
         if (executor.isShutdown() || executor.isTerminated()) {
@@ -82,7 +82,7 @@ public class DefaultExecutorRepository implements ExecutorRepository {
             executor = createExecutor(url);
             executors.put(portKey, executor);
         }
-        return executor;
+        return executor; // ThreadPoolExecutor
     }
 
     public ExecutorService getExecutor(URL url) {
@@ -167,8 +167,8 @@ public class DefaultExecutorRepository implements ExecutorRepository {
             }
         });
     }
-
-    private ExecutorService createExecutor(URL url) {
+    // url -- dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&threadname=DubboServerHandler-11.0.94.189:20880&timestamp=1617438484498
+    private ExecutorService createExecutor(URL url) { // return ThreadPoolExecutor, corePoolSize = 200, maximumPoolSize = 200
         return (ExecutorService) ExtensionLoader.getExtensionLoader(ThreadPool.class).getAdaptiveExtension().getExecutor(url);
     }
 
