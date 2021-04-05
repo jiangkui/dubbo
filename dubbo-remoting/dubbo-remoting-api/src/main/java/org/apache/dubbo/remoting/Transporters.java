@@ -53,6 +53,8 @@ public class Transporters {
         } else {
             handler = new ChannelHandlerDispatcher(handlers);
         }
+        // handler --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol$1 --> DubboProtocol
+        // url --> dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=29084&release=&side=provider&timestamp=1617587610548
         return getTransporter().bind(url, handler);
     }
 
@@ -75,7 +77,8 @@ public class Transporters {
         return getTransporter().connect(url, handler);
     }
 
-    public static Transporter getTransporter() { // {Class@2498} "class org.apache.dubbo.remoting.transport.netty4.NettyTransporter" -> netty4
+    public static Transporter getTransporter() {
+        // {Class@2498} "class org.apache.dubbo.remoting.transport.netty4.NettyTransporter" -> netty4
         return ExtensionLoader.getExtensionLoader(Transporter.class).getAdaptiveExtension();
     }
 

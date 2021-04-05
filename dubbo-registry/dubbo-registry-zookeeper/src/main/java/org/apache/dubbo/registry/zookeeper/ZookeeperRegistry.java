@@ -130,6 +130,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
         }
     }
 
+    /**
+     * 服务注册，即创建服务对应的 URL 节点
+     * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=31385&release=&side=provider&timestamp=1617590835442
+     */
     @Override
     public void doRegister(URL url) {
         try {
@@ -331,8 +335,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
      *
      * 格式为：Root/Service/Type/URL
      *
-     * @param url
-     * @return
+     * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=31385&release=&side=provider&timestamp=1617590835442
+     * @return /dubbo/org.apache.dubbo.demo.DemoService/providers/dubbo%3A%2F%2F11.0.94.189%3A20880%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-api-provider%26default%3Dtrue%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%2CsayHelloAsync%26pid%3D31385%26release%3D%26side%3Dprovider%26timestamp%3D1617590835442
      */
     private String toUrlPath(URL url) {
         return toCategoryPath(url) + PATH_SEPARATOR + URL.encode(url.toFullString());

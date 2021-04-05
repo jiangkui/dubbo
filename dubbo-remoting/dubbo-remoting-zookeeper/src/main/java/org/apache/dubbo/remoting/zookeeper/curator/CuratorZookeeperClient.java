@@ -100,9 +100,14 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorZooke
         }
     }
 
+    /**
+     * 创建临时节点
+     * @param path /dubbo/org.apache.dubbo.demo.DemoService/providers/dubbo%3A%2F%2F11.0.94.189%3A20880%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-api-provider%26default%3Dtrue%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%2CsayHelloAsync%26pid%3D31385%26release%3D%26side%3Dprovider%26timestamp%3D1617590835442
+     */
     @Override
     public void createEphemeral(String path) {
         try {
+            // 创建临时节点
             client.create().withMode(CreateMode.EPHEMERAL).forPath(path);
         } catch (NodeExistsException e) {
             logger.warn("ZNode " + path + " already exists, since we will only try to recreate a node on a session expiration" +

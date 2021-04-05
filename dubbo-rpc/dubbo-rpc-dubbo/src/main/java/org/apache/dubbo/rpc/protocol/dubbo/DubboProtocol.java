@@ -370,6 +370,10 @@ public class DubboProtocol extends AbstractProtocol {
         // 启动通信服务器
         ExchangeServer server;
         try {
+            // 进入 Dubbo Exchange 层：封装请求响应模式，同步转异步，以 Request, Response 为中心，扩展接口为 Exchanger, ExchangeChannel, ExchangeClient, ExchangeServer
+            // 下面还有两层：
+            //      - transport 网络传输层：抽象 mina 和 netty 为统一接口，以 Message 为中心，扩展接口为 Channel, Transporter, Client, Server, Codec
+            //      - serialize 数据序列化层：可复用的一些工具，扩展接口为 Serialization, ObjectInput, ObjectOutput, ThreadPool
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
@@ -388,7 +392,8 @@ public class DubboProtocol extends AbstractProtocol {
     }
 
     private void optimizeSerialization(URL url) throws RpcException {
-        String className = url.getParameter(OPTIMIZER_KEY, ""); // className -- ""
+        // className -- ""
+        String className = url.getParameter(OPTIMIZER_KEY, "");
         if (StringUtils.isEmpty(className) || optimizers.contains(className)) {
             return; // 走这里
         }

@@ -167,7 +167,11 @@ public class DefaultExecutorRepository implements ExecutorRepository {
             }
         });
     }
-    // url -- dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&threadname=DubboServerHandler-11.0.94.189:20880&timestamp=1617438484498
+
+    /**
+     *
+      * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&threadname=DubboServerHandler-11.0.94.189:20880&timestamp=1617438484498
+     */
     private ExecutorService createExecutor(URL url) { // return ThreadPoolExecutor, corePoolSize = 200, maximumPoolSize = 200
         return (ExecutorService) ExtensionLoader.getExtensionLoader(ThreadPool.class).getAdaptiveExtension().getExecutor(url);
     }

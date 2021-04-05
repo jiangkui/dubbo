@@ -67,7 +67,11 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
         deletePath(path);
     }
 
-
+    /**
+     * 第二次进入：path /dubbo/org.apache.dubbo.demo.DemoService/providers
+     * @param path /dubbo/org.apache.dubbo.demo.DemoService/providers/dubbo%3A%2F%2F11.0.94.189%3A20880%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-api-provider%26default%3Dtrue%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%2CsayHelloAsync%26pid%3D31385%26release%3D%26side%3Dprovider%26timestamp%3D1617590835442
+     * @param ephemeral true 临时节点（默认），false 为持久节点，当注册方退出时，数据依然保存在注册中心
+     */
     @Override
     public void create(String path, boolean ephemeral) {
         if (!ephemeral) {
@@ -84,8 +88,10 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
             create(path.substring(0, i), false);
         }
         if (ephemeral) {
+            // 短暂的，临时节点，默认 true
             createEphemeral(path);
         } else {
+            // 持久化节点，当注册方退出时，数据依然保存在注册中心
             createPersistent(path);
             persistentExistNodePath.add(path);
         }

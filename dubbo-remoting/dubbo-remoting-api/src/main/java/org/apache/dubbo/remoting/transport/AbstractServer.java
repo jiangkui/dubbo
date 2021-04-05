@@ -54,20 +54,32 @@ public abstract class AbstractServer extends AbstractEndpoint implements Remotin
     private int idleTimeout;
 
     private ExecutorRepository executorRepository = ExtensionLoader.getExtensionLoader(ExecutorRepository.class).getDefaultExtension();
-// handler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> DecodeHandler. url -- dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
+//
+
+    /**
+     *
+     * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
+     * @param handler MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> DecodeHandler.
+     */
     public AbstractServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, handler);
-        localAddress = getUrl().toInetSocketAddress(); // /11.0.94.189:20880
+        // /11.0.94.189:20880
+        localAddress = getUrl().toInetSocketAddress();
 
-        String bindIp = getUrl().getParameter(Constants.BIND_IP_KEY, getUrl().getHost()); // 0.0.0.0
-        int bindPort = getUrl().getParameter(Constants.BIND_PORT_KEY, getUrl().getPort()); // 20880
+        // 0.0.0.0
+        String bindIp = getUrl().getParameter(Constants.BIND_IP_KEY, getUrl().getHost());
+        // 20880
+        int bindPort = getUrl().getParameter(Constants.BIND_PORT_KEY, getUrl().getPort());
         if (url.getParameter(ANYHOST_KEY, false) || NetUtils.isInvalidLocalHost(bindIp)) {
             bindIp = ANYHOST_VALUE;
         }
         bindAddress = new InetSocketAddress(bindIp, bindPort);
-        this.accepts = url.getParameter(ACCEPTS_KEY, DEFAULT_ACCEPTS); // 0
-        this.idleTimeout = url.getParameter(IDLE_TIMEOUT_KEY, DEFAULT_IDLE_TIMEOUT); // 600000
+        // 0
+        this.accepts = url.getParameter(ACCEPTS_KEY, DEFAULT_ACCEPTS);
+        // 600000
+        this.idleTimeout = url.getParameter(IDLE_TIMEOUT_KEY, DEFAULT_IDLE_TIMEOUT);
         try {
+            // 这里开启 Netty Server
             doOpen();
             if (logger.isInfoEnabled()) { //Start NettyServer bind /0.0.0.0:20880, export /11.0.94.189:20880
                 logger.info("Start " + getClass().getSimpleName() + " bind " + getBindAddress() + ", export " + getLocalAddress());

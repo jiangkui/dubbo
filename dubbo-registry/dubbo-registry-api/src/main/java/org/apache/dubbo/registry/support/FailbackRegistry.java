@@ -104,7 +104,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     }
 
     private void removeFailedRegistered(URL url) {
-        FailedRegisteredTask f = failedRegistered.remove(url);
+        FailedRegisteredTask f = failedRegistered.remove(url); // 注册失败
         if (f != null) {
             f.cancel();
         }
@@ -124,7 +124,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     }
 
     private void removeFailedUnregistered(URL url) {
-        FailedUnregisteredTask f = failedUnregistered.remove(url);
+        FailedUnregisteredTask f = failedUnregistered.remove(url);// 注销失败
         if (f != null) {
             f.cancel();
         }
@@ -191,7 +191,10 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         return failedUnsubscribed;
     }
 
-
+    /**
+     * 注册 provider 到 zk
+     * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=31385&release=&side=provider&timestamp=1617590835442
+     */
     @Override
     public void register(URL url) {
         if (!acceptable(url)) {
@@ -203,6 +206,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         removeFailedUnregistered(url);
         try {
             // Sending a registration request to the server side
+            // 向服务器端发送注册请求
             doRegister(url);
         } catch (Exception e) {
             Throwable t = e;

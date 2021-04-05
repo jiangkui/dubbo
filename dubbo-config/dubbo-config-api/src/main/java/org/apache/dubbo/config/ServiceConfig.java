@@ -563,6 +563,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                     exporters.add(exporter);
                 }
 
+                // 发布服务定义
                 MetadataUtils.publishServiceDefinition(url);
             }
         }
@@ -638,6 +639,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
                     - "class org.apache.dubbo.rpc.protocol.ProtocolFilterWrapper"
                     - "class org.apache.dubbo.rpc.protocol.ProtocolListenerWrapper"
 
+            方法调用时，会包装成如下结构：https://github.com/jiangkui/blog/blob/master/blogs/RPC/dubbo/dubbo.md
                     exporter = ListenerExporterWrapper
                         exporter = InjvmExporter
                             invoker = FilterNode，内含有8个filter

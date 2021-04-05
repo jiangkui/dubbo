@@ -74,13 +74,14 @@ public class NettyServer extends AbstractServer implements RemotingServer {
     public NettyServer(URL url, ChannelHandler handler) throws RemotingException {
         // you can customize name and type of client thread pool by THREAD_NAME_KEY and THREADPOOL_KEY in CommonConstants.
         // the handler will be wrapped: MultiMessageHandler->HeartbeatHandler->handler
+        // 您可以在 CommonConstants 中通过 THREAD_NAME_KEY 和 THREADPOOL_KEY 自定义客户端线程池的名称和类型。
+        // 处理程序将被包装：MultiMessageHandler-> HeartbeatHandler-> handler
         super(ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME), ChannelHandlers.wrap(handler, url));
     }
 
     /**
      * Init and start netty server
      * 很熟悉的代码了对吧。
-     * @throws Throwable
      */
     @Override
     protected void doOpen() throws Throwable {

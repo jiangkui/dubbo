@@ -83,7 +83,7 @@ public class ProtocolFilterWrapper implements Protocol {
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         if (UrlUtils.isRegistry(invoker.getUrl())) {
-            return protocol.export(invoker); // 如果是 registry，则先处理，之后会改成 dubbo，然后再走下面的流程。 fixme jiangkui 搞到这里
+            return protocol.export(invoker); // 如果是 registry 则直接走这里，没有filter
         }
         return protocol.export(buildInvokerChain(invoker, SERVICE_FILTER_KEY, CommonConstants.PROVIDER));
     }
