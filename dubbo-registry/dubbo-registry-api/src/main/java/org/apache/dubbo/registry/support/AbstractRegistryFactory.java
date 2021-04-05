@@ -44,6 +44,8 @@ import static org.apache.dubbo.rpc.cluster.Constants.REFER_KEY;
 /**
  * AbstractRegistryFactory. (SPI, Singleton, ThreadSafe)
  *
+ * 注册中心是Dubbo的重要组成部分，主要用于服务的注册与发现，我们可以选择Redis、数据库、Zookeeper作为Dubbo的注册中心，Dubbo推荐用户使用Zookeeper作为注册中心，在provider和consumer的初始化过程中，我们看到了dubbo通过调用RegistryFactory的getRegistry方法来获取注册中心实例，我们就以这个方法作为入口来分析注册中心的相关流程
+ * 原文链接：https://blog.csdn.net/heroqiang/article/details/82261226
  * @see org.apache.dubbo.registry.RegistryFactory
  */
 public abstract class AbstractRegistryFactory implements RegistryFactory {
@@ -133,6 +135,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
                 .build();
         String key = createRegistryCacheKey(url);
         // Lock the registry access process to ensure a single instance of the registry
+        // 锁定注册中心的访问过程以确保注册中心的的单个实例
         LOCK.lock();
         try {
             // double check
@@ -147,6 +150,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
                 return registry;
             }
             //create registry by spi/ioc
+            /* 创建注册中心实例 */
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);

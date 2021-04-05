@@ -204,6 +204,7 @@ public class RegistryProtocol implements Protocol {
     public <T> Exporter<T> export(final Invoker<T> originInvoker) throws RpcException {
         // 获取注册中心 URL：zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&dubbo=2.0.2&export=dubbo%3A%2F%2F11.0.94.189%3A20880%2Forg.apache.dubbo.demo.DemoService%3Fanyhost%3Dtrue%26application%3Ddubbo-demo-api-provider%26bind.ip%3D11.0.94.189%26bind.port%3D20880%26default%3Dtrue%26deprecated%3Dfalse%26dubbo%3D2.0.2%26dynamic%3Dtrue%26generic%3Dfalse%26interface%3Dorg.apache.dubbo.demo.DemoService%26methods%3DsayHello%2CsayHelloAsync%26pid%3D27576%26release%3D%26side%3Dprovider%26timestamp%3D1616980352726&pid=27576&timestamp=1616980352691
         URL registryUrl = getRegistryUrl(originInvoker);
+
         // url to export locally
         // 获取已经注册的服务提供者：dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=27576&release=&side=provider&timestamp=1616980352726
         URL providerUrl = getProviderUrl(originInvoker);
@@ -217,8 +218,10 @@ public class RegistryProtocol implements Protocol {
         final URL overrideSubscribeUrl = getSubscribedOverrideUrl(providerUrl);
         final OverrideListener overrideSubscribeListener = new OverrideListener(overrideSubscribeUrl, originInvoker);
         overrideListeners.put(overrideSubscribeUrl, overrideSubscribeListener);
+
         // dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=93536&release=&side=provider&timestamp=1617436492361
         providerUrl = overrideUrlWithConfig(providerUrl, overrideSubscribeListener);
+
         // export invoker
         // 创建 Invoker 并调用 protocol.export 暴露服务，Dubbo 实现是启动 NettyServer 暴露服务。
         final ExporterChangeableWrapper<T> exporter = doLocalExport(originInvoker, providerUrl);
@@ -226,6 +229,7 @@ public class RegistryProtocol implements Protocol {
         // url to registry
         // registry.getRegistry = ZookeeperRegistry：zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&dubbo=2.0.2&interface=org.apache.dubbo.registry.RegistryService&pid=27576&timestamp=1616980352691
         final Registry registry = getRegistry(originInvoker);
+
         // 创建监听器
         // dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=27576&release=&side=provider&timestamp=1616980352726
         final URL registeredProviderUrl = getUrlToRegistry(providerUrl, registryUrl);
@@ -246,10 +250,12 @@ public class RegistryProtocol implements Protocol {
         exporter.setSubscribeUrl(overrideSubscribeUrl);
 
         // Deprecated! Subscribe to override rules in 2.6.x or before.
-        // 订阅逻辑
+        // 订阅逻辑，这里都订阅啥了？
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
+        // 这里都通知啥了？
         notifyExport(exporter);
+
         //Ensure that a new exporter instance is returned every time export
         return new DestroyableExporter<>(exporter);
     }
@@ -484,13 +490,18 @@ public class RegistryProtocol implements Protocol {
         }
 
         Cluster cluster = Cluster.getCluster(qs.get(CLUSTER_KEY));
-        // 创建引用，要解决几个问题：
+        // 创建引用，要解决几个问题：这块有点看不懂呀。
         return doRefer(cluster, registry, type, url, qs);
     }
 
     protected <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url, Map<String, String> parameters) {
+        // 创建服务消费者 URL
         URL consumerUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
+
+        // 将多个服务提供者合并
         ClusterInvoker<T> migrationInvoker = getMigrationInvoker(this, cluster, registry, type, url, consumerUrl);
+
+        // 拦截调用程序
         return interceptInvoker(migrationInvoker, url, consumerUrl);
     }
 
@@ -498,12 +509,23 @@ public class RegistryProtocol implements Protocol {
         return new ServiceDiscoveryMigrationInvoker<T>(registryProtocol, cluster, registry, type, url, consumerUrl);
     }
 
+    /**
+     * 拦截调用程序
+     *
+     * @param invoker
+     * @param url
+     * @param consumerUrl
+     * @param <T>
+     * @return
+     */
     protected <T> Invoker<T> interceptInvoker(ClusterInvoker<T> invoker, URL url, URL consumerUrl) {
         List<RegistryProtocolListener> listeners = findRegistryProtocolListeners(url);
+        // 注册中心此时没有其他服务提供者
         if (CollectionUtils.isEmpty(listeners)) {
             return invoker;
         }
 
+        // 多个服务提供者时，通过 Wrapper 包裹，并通知 RegistryProtocol 的监听器
         for (RegistryProtocolListener listener : listeners) {
             listener.onRefer(this, invoker, consumerUrl);
         }

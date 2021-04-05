@@ -76,6 +76,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * and Hierarchical Timing Wheels: data structures to efficiently implement a
  * timer facility'</a>.  More comprehensive slides are located
  * <a href="http://www.cse.wustl.edu/~cdgill/courses/cs6874/TimingWheels.ppt">here</a>.
+ *
+ * Dubbo中对定时轮的应用主要体现在如下几个方面：
+ * - 失败重试
+ *      - 注册 Register
+ *      - 取消注册 Unregister
+ *      - 订阅 Subscribe
+ *      - 取消订阅 Unsubscribe
+ * - 周期任务
+ *      - 心跳 Heartbeat
+ *      - 重连 Reconnect
+ *      - 下线 CloseChannel
+ * 链接：https://juejin.cn/post/6844904019710722062
  */
 public class HashedWheelTimer implements Timer {
 

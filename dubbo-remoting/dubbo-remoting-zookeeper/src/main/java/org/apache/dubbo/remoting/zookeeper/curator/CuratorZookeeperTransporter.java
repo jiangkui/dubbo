@@ -23,8 +23,8 @@ import org.apache.dubbo.remoting.zookeeper.support.AbstractZookeeperTransporter;
 public class CuratorZookeeperTransporter extends AbstractZookeeperTransporter {
     @Override
     public ZookeeperClient createZookeeperClient(URL url) {
+        // fixme jiangkui Curator 是 ZooKeeper 的高级 Api 框架，大大简化 ZooKeeper 的使用。
+        // 官网地址：https://curator.apache.org/curator-framework/index.html
         return new CuratorZookeeperClient(url);
     }
-
-
 }

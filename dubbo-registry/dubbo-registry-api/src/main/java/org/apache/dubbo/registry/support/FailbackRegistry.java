@@ -65,10 +65,26 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     private final HashedWheelTimer retryTimer;
 
     public FailbackRegistry(URL url) {
+        // 调用父类构造方法，很关键，里面有本地缓存机制
         super(url);
+        // 重试间隔，默认5000ms
         this.retryPeriod = url.getParameter(REGISTRY_RETRY_PERIOD_KEY, DEFAULT_REGISTRY_RETRY_PERIOD);
 
         // since the retry task will not be very much. 128 ticks is enough.
+        // 因为重试任务不会太多。128个记号就够了。
+        // 固定间隔重试，HashedWheelTimer定时轮算法被广泛使用，netty、dubbo甚至是操作系统Linux中都有其身影，用于管理及维护大量Timer调度算法。https://juejin.cn/post/6844904019710722062
+
+        // Dubbo中对定时轮的应用主要体现在如下几个方面：
+        // - 失败重试
+        //         - 注册 Register
+        //         - 取消注册 Unregister
+        //         - 订阅 Subscribe
+        //         - 取消订阅 Unsubscribe
+        //         - 周期任务
+        //         - 心跳 Heartbeat
+        //         - 重连 Reconnect
+        //         - 下线 CloseChannel
+        // 链接：https://juejin.cn/post/6844904019710722062
         retryTimer = new HashedWheelTimer(new NamedThreadFactory("DubboRegistryRetryTimer", true), retryPeriod, TimeUnit.MILLISECONDS, 128);
     }
 
@@ -90,6 +106,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         failedUnsubscribed.remove(h);
     }
 
+    /**
+     * 注册失败重试
+     */
     private void addFailedRegistered(URL url) {
         FailedRegisteredTask oldOne = failedRegistered.get(url);
         if (oldOne != null) {
@@ -103,6 +122,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 删除失败的注册
+     */
     private void removeFailedRegistered(URL url) {
         FailedRegisteredTask f = failedRegistered.remove(url); // 注册失败
         if (f != null) {
@@ -110,6 +132,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 注销失败重试
+     */
     private void addFailedUnregistered(URL url) {
         FailedUnregisteredTask oldOne = failedUnregistered.get(url);
         if (oldOne != null) {
@@ -123,6 +148,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 删除注销失败重试
+     */
     private void removeFailedUnregistered(URL url) {
         FailedUnregisteredTask f = failedUnregistered.remove(url);// 注销失败
         if (f != null) {
@@ -130,6 +158,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 订阅失败重试
+     */
     protected void addFailedSubscribed(URL url, NotifyListener listener) {
         Holder h = new Holder(url, listener);
         FailedSubscribedTask oldOne = failedSubscribed.get(h);
@@ -144,6 +175,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 删除订阅失败重试
+     */
     private void removeFailedSubscribed(URL url, NotifyListener listener) {
         Holder h = new Holder(url, listener);
         FailedSubscribedTask f = failedSubscribed.remove(h);
@@ -153,6 +187,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         removeFailedUnsubscribed(url, listener);
     }
 
+    /**
+     * 取消订阅重试
+     */
     private void addFailedUnsubscribed(URL url, NotifyListener listener) {
         Holder h = new Holder(url, listener);
         FailedUnsubscribedTask oldOne = failedUnsubscribed.get(h);
@@ -167,6 +204,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 删除取消订阅重试
+     */
     private void removeFailedUnsubscribed(URL url, NotifyListener listener) {
         Holder h = new Holder(url, listener);
         FailedUnsubscribedTask f = failedUnsubscribed.remove(h);
@@ -175,18 +215,30 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 注册失败重试队列
+     */
     ConcurrentMap<URL, FailedRegisteredTask> getFailedRegistered() {
         return failedRegistered;
     }
 
+    /**
+     * 注销失败重试队列
+     */
     ConcurrentMap<URL, FailedUnregisteredTask> getFailedUnregistered() {
         return failedUnregistered;
     }
 
+    /**
+     * 订阅失败重试队列
+     */
     ConcurrentMap<Holder, FailedSubscribedTask> getFailedSubscribed() {
         return failedSubscribed;
     }
 
+    /**
+     * 取消订阅失败重试队列
+     */
     ConcurrentMap<Holder, FailedUnsubscribedTask> getFailedUnsubscribed() {
         return failedUnsubscribed;
     }
@@ -226,10 +278,14 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             }
 
             // Record a failed registration request to a failed list, retry regularly
+            // 如果注册失败，则加入重试队列
             addFailedRegistered(url);
         }
     }
 
+    /**
+     * 重新 注册
+     */
     @Override
     public void reExportRegister(URL url) {
         if (!acceptable(url)) {
@@ -249,6 +305,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         }
     }
 
+    /**
+     * 取消注册
+     */
     @Override
     public void unregister(URL url) {
         super.unregister(url);
@@ -256,6 +315,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         removeFailedUnregistered(url);
         try {
             // Sending a cancellation request to the server side
+            // 取消注册
             doUnregister(url);
         } catch (Exception e) {
             Throwable t = e;
@@ -275,6 +335,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             }
 
             // Record a failed registration request to a failed list, retry regularly
+            // 加入重试队列
             addFailedUnregistered(url);
         }
     }
@@ -376,6 +437,9 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         super.notify(url, listener, urls);
     }
 
+    /**
+     * 恢复
+     */
     @Override
     protected void recover() throws Exception {
         // register

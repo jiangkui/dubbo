@@ -24,6 +24,9 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * ExchangeHandler. (API, Prototype, ThreadSafe)
+ *
+ * DubboProtocol.requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
+ *  原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
  */
 public interface ExchangeHandler extends ChannelHandler, TelnetHandler {
 

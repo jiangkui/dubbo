@@ -105,6 +105,10 @@ public class DubboProtocol extends AbstractProtocol {
     private final ConcurrentMap<String, Object> locks = new ConcurrentHashMap<>();
     private final Set<String> optimizers = new ConcurrentHashSet<>();
 
+    /**
+     * handler 包装过程：DubboProtocol.requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
+     * 原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
+     */
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
 
         @Override
@@ -290,7 +294,7 @@ public class DubboProtocol extends AbstractProtocol {
         // 加入缓存
         exporterMap.put(key, exporter);
 
-        // 本地存根相关
+        // 本地存根相关，本地存根(服务提供方想在客户端执行逻辑)，详情参见官方文档：https://dubbo.apache.org/zh/docs/v2.7/user/examples/local-stub/
         //export an stub service for dispatching event
         Boolean isStubSupportEvent = url.getParameter(STUB_EVENT_KEY, DEFAULT_STUB_EVENT); // 本地存根(服务提供方想在客户端执行逻辑)，详情参见官方文档：https://dubbo.apache.org/zh/docs/v2.7/user/examples/local-stub/
         Boolean isCallbackservice = url.getParameter(IS_CALLBACK_SERVICE, false); // 是否是回调，false
@@ -374,6 +378,8 @@ public class DubboProtocol extends AbstractProtocol {
             // 下面还有两层：
             //      - transport 网络传输层：抽象 mina 和 netty 为统一接口，以 Message 为中心，扩展接口为 Channel, Transporter, Client, Server, Codec
             //      - serialize 数据序列化层：可复用的一些工具，扩展接口为 Serialization, ObjectInput, ObjectOutput, ThreadPool
+            // handler链路：DubboProtocol.requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
+            //      原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);

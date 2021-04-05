@@ -87,13 +87,26 @@ public class InjvmProtocol extends AbstractProtocol implements Protocol {
         return DEFAULT_PORT;
     }
 
+    /**
+     * 在本地暴露服务：InjvmExporter的作用比较简单，就是简单的在exporterMap中添加或删除key和自身Exporter的关系。
+     *
+     * 引用参见：org.apache.dubbo.rpc.protocol.AbstractProtocol#refer(java.lang.Class, org.apache.dubbo.common.URL)
+     *
+     * @param invoker 这个invoker 是一个包含了多个 filter 的责任链结构
+     */
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         // serviceKey: org.apache.dubbo.demo.DemoService
         // exporterMap：org.apache.dubbo.demo.DemoService --> InjvmExporter
+        // InjvmExporter的作用比较简单，就是简单的在exporterMap中添加或删除key和自身Exporter的关系。
         return new InjvmExporter<T>(invoker, invoker.getUrl().getServiceKey(), exporterMap);
     }
 
+    /**
+     * 在本地引用服务：也很简单
+     *
+     * doInvoke 时：就是从 exporterMap 内按 url 找到 export 的 Invoker 进行调用。
+     */
     @Override
     public <T> Invoker<T> protocolBindingRefer(Class<T> serviceType, URL url) throws RpcException {
         return new InjvmInvoker<T>(serviceType, url, url.getServiceKey(), exporterMap);

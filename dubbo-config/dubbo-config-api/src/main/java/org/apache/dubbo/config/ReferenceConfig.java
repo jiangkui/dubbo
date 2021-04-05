@@ -251,7 +251,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         // 检查接口、consumer 等配置是否合法，并对相应的配置赋值
         checkAndUpdateSubConfigs();
 
-        // 本地存根检查，fixme jiangkui 本地存根是个啥？
+        // 本地存根检查，本地存根(服务提供方想在客户端执行逻辑)，详情参见官方文档：https://dubbo.apache.org/zh/docs/v2.7/user/examples/local-stub/
         checkStubAndLocal(interfaceClass);
         ConfigValidationUtils.checkMock(interfaceClass, this);
 
@@ -321,7 +321,9 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
         // 存储配置数据
         serviceMetadata.getAttachments().putAll(map);
-        // 创建代理
+        // 关键点：创建代理
+        // 关键点：创建代理
+        // 关键点：创建代理
         ref = createProxy(map);
 
         serviceMetadata.setTarget(ref);
@@ -363,7 +365,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             // 远程引用
             urls.clear();
             // 若 url 不为空
-            if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
+            if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.//用户指定的URL，可以是对等地址，也可以是注册中心的地址。
                 // 配置多个 url 时，用分号分隔
                 String[] us = SEMICOLON_SPLIT_PATTERN.split(url);
                 if (us != null && us.length > 0) {

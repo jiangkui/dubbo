@@ -94,8 +94,10 @@ public abstract class AbstractRegistry implements Registry {
     private File file;
 
     /**
-     * fixme jiangkui
-     * AbstractRegistry 实现了 Registry ，在实现注册和取消注册、订阅和取消订阅功能的基础上面，对注册数据提供了持久化操作保存到文件，以便注册中心在宕机后重新启动恢复服务提供者列表等信息。
+     * AbstractRegistry 实现了 Registry，在实现注册和取消注册、订阅和取消订阅功能的基础上面，对注册数据提供了持久化操作保存到文件，以便注册中心在宕机后重新启动恢复服务提供者列表等信息。
+     *
+     * 例如：consumer从注册中心订阅了provider等信息后会缓存到本地文件中，这样当注册中心不可用时，consumer启动时就可以加载这个缓存文件里面的内容与provider进行交互，这样就可以不依赖注册中心，但是无法获取到新的provider变更通知，所以如果provider信息在注册中心不可用这段时间发生了很大变化，那就很可能会出现服务无法调用的情况，
+     * 原文链接：https://blog.csdn.net/heroqiang/article/details/82261226
      */
     public AbstractRegistry(URL url) {
         setUrl(url);
