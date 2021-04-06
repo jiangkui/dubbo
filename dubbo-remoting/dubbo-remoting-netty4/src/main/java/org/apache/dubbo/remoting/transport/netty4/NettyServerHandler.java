@@ -46,7 +46,7 @@ public class NettyServerHandler extends ChannelDuplexHandler {
 
     private final URL url;
 
-    private final ChannelHandler handler;
+    private final ChannelHandler handler; // NettyServer 这里传入的是这个
 
     public NettyServerHandler(URL url, ChannelHandler handler) {
         if (url == null) {

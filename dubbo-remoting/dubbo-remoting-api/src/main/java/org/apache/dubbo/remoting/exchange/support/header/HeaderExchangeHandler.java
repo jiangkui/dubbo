@@ -46,7 +46,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     protected static final Logger logger = LoggerFactory.getLogger(HeaderExchangeHandler.class);
 
-    private final ExchangeHandler handler;
+    private final ExchangeHandler handler; // org.apache.dubbo.rpc.protocol.dubbo.DubboProtocol.requestHandler
 
     public HeaderExchangeHandler(ExchangeHandler handler) {
         if (handler == null) {
