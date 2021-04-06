@@ -16,6 +16,10 @@
  */
 package org.apache.dubbo.remoting.transport.netty4;
 
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.handler.timeout.IdleStateEvent;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
@@ -23,11 +27,6 @@ import org.apache.dubbo.common.utils.NetUtils;
 import org.apache.dubbo.remoting.Channel;
 import org.apache.dubbo.remoting.ChannelHandler;
 import org.apache.dubbo.remoting.transport.netty4.SslHandlerInitializer.HandshakeCompletionEvent;
-
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.handler.timeout.IdleStateEvent;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -64,6 +63,9 @@ public class NettyServerHandler extends ChannelDuplexHandler {
         return channels;
     }
 
+    /**
+     * 通道就绪触发
+     */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
@@ -92,9 +94,14 @@ public class NettyServerHandler extends ChannelDuplexHandler {
         }
     }
 
+    /**
+     * 通道有读取事件时，触发
+     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        // 连接成功后添加netty的Channel和dubbo的NettyChannel之间的映射关系
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
+        // AbstractPeer.received()
         handler.received(channel, msg);
     }
 
@@ -110,24 +117,32 @@ public class NettyServerHandler extends ChannelDuplexHandler {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         // server will close channel when server don't receive any heartbeat from client util timeout.
         if (evt instanceof IdleStateEvent) {
+            // 连接成功后添加netty的Channel和dubbo的NettyChannel之间的映射关系
+
             NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
             try {
                 logger.info("IdleStateEvent triggered, close channel " + channel);
                 channel.close();
             } finally {
+                // 如果连接断开，移除netty的Channel和dubbo的NettyChannel之间的映射关系
                 NettyChannel.removeChannelIfDisconnected(ctx.channel());
             }
         }
         super.userEventTriggered(ctx, evt);
     }
 
+    /**
+     * 异常情况
+     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {
+        // 连接成功后添加netty的Channel和dubbo的NettyChannel之间的映射关系
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
         try {
             handler.caught(channel, cause);
         } finally {
+            // 如果连接断开，移除netty的Channel和dubbo的NettyChannel之间的映射关系
             NettyChannel.removeChannelIfDisconnected(ctx.channel());
         }
     }

@@ -144,6 +144,7 @@ public abstract class AbstractPeer implements Endpoint, ChannelHandler {
         if (closed) {
             return;
         }
+        /* 服务调用请求处理 */
         handler.received(ch, msg);
     }
 

@@ -238,6 +238,9 @@ public class DubboProtocol extends AbstractProtocol {
                         .equals(NetUtils.filterLocalHost(address.getAddress().getHostAddress()));
     }
 
+    /**
+     * 运行时 通过 channel 来查找对应的 invoker
+     */
     Invoker<?> getInvoker(Channel channel, Invocation inv) throws RemotingException {
         boolean isCallBackServiceInvoke = false;
         boolean isStubServiceInvoke = false;
@@ -257,12 +260,14 @@ public class DubboProtocol extends AbstractProtocol {
             inv.getObjectAttachments().put(IS_CALLBACK_SERVICE_INVOKE, Boolean.TRUE.toString());
         }
 
+        // 拼接 server key：org.apache.dubbo.demo.DemoService:20880
         String serviceKey = serviceKey(
                 port,
                 path,
                 (String) inv.getObjectAttachments().get(VERSION_KEY),
                 (String) inv.getObjectAttachments().get(GROUP_KEY)
         );
+        // 获取对应的 invoker
         DubboExporter<?> exporter = (DubboExporter<?>) exporterMap.get(serviceKey);
 
         if (exporter == null) {
@@ -291,7 +296,7 @@ public class DubboProtocol extends AbstractProtocol {
         // export service. key：org.apache.dubbo.demo.DemoService:20880
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
-        // 加入缓存
+        // 加入缓存。方法调用时，会通过 channel --> exporterMap --> 查找到对应的 Exporter --> Invoker --> 执行 invoker.invoke();
         exporterMap.put(key, exporter);
 
         // 本地存根相关，本地存根(服务提供方想在客户端执行逻辑)，详情参见官方文档：https://dubbo.apache.org/zh/docs/v2.7/user/examples/local-stub/

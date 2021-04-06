@@ -75,6 +75,8 @@ final class NettyChannel extends AbstractChannel {
      * Get dubbo channel by netty channel through channel cache.
      * Put netty channel into it if dubbo channel don't exist in the cache.
      *
+     * 连接成功后添加netty的Channel和dubbo的NettyChannel之间的映射关系
+     *
      * @param ch      netty channel
      * @param url
      * @param handler dubbo handler that contain netty's handler
@@ -100,6 +102,8 @@ final class NettyChannel extends AbstractChannel {
 
     /**
      * Remove the inactive channel.
+     * 
+     * 如果连接断开，移除netty的Channel和dubbo的NettyChannel之间的映射关系
      *
      * @param ch netty channel
      */
