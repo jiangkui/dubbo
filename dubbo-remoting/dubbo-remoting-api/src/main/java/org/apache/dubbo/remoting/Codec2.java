@@ -22,6 +22,13 @@ import org.apache.dubbo.remoting.buffer.ChannelBuffer;
 
 import java.io.IOException;
 
+/**
+ * Dubbo 协议详解：https://dubbo.apache.org/zh/blog/2018/10/05/dubbo-%E5%8D%8F%E8%AE%AE%E8%AF%A6%E8%A7%A3/
+ *
+ * 本文介绍了 Dubbo 协议的设计
+ *
+ * Codec工作在一种协议上，encode是将通信对象编码到ByteBufferWrapper中，decode是将从网络上读取的ChannelBuffer解码为Object，也就是通信对象。
+ */
 @SPI
 public interface Codec2 {
 
