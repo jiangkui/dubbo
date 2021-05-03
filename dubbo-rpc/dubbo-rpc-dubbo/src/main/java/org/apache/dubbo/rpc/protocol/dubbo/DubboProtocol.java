@@ -106,7 +106,7 @@ public class DubboProtocol extends AbstractProtocol {
     private final Set<String> optimizers = new ConcurrentHashSet<>();
 
     /**
-     * handler 包装过程：DubboProtocol.requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
+     * handler 包装过程：DubboProtocol#requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
      * 原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
      */
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
@@ -484,6 +484,7 @@ public class DubboProtocol extends AbstractProtocol {
                 clients[i] = shareClients.get(i);
 
             } else {
+                // 初始化 client
                 clients[i] = initClient(url);
             }
         }

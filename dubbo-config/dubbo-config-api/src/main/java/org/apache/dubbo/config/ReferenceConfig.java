@@ -354,7 +354,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
     private T createProxy(Map<String, String> map) {
         // 判断是否本地暴露，包含指定服务 url 直连的情况判断、或根据参数配置是否进行本地暴露，如协议、scope、injvm 等
         if (shouldJvmRefer(map)) { // 本地引用
-            // 创建 URL，协议为 njvm
+            // 创建 URL，协议为 injvm
             URL url = new URL(LOCAL_PROTOCOL, LOCALHOST_VALUE, 0, interfaceClass.getName()).addParameters(map);
             // 调用 refer 方法创建 InjvmInvoker 实例
             invoker = REF_PROTOCOL.refer(interfaceClass, url);
@@ -412,7 +412,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
 
             // 只有一个注册中心或者服务提供者
             if (urls.size() == 1) {
-                // 构建 invoker 实例
+                // 构建 invoker 实例，AbstractProtocol#refer
                 invoker = REF_PROTOCOL.refer(interfaceClass, urls.get(0));
             } else { // 多个注册中心或多个服务提供者，或者两者混合
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();

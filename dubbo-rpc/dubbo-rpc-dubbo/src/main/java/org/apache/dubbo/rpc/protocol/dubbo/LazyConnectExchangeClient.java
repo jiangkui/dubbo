@@ -125,6 +125,7 @@ final class LazyConnectExchangeClient implements ExchangeClient {
     @Override
     public CompletableFuture<Object> request(Object request, int timeout, ExecutorService executor) throws RemotingException {
         warning();
+        // 初始化
         initClient();
         return client.request(request, timeout, executor);
     }

@@ -38,7 +38,7 @@ public class NettyTransporter implements Transporter {
 
     @Override
     public Client connect(URL url, ChannelHandler handler) throws RemotingException {
+        // 这里内部会初始化 Netty Client
         return new NettyClient(url, handler);
     }
-
 }

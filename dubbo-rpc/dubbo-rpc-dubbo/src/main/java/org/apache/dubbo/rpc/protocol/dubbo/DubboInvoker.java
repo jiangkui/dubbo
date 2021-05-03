@@ -89,6 +89,7 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
         inv.setAttachment(VERSION_KEY, version);
 
         ExchangeClient currentClient;
+        // 获取 client
         if (clients.length == 1) {
             currentClient = clients[0];
         } else {
@@ -99,10 +100,12 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
             int timeout = calculateTimeout(invocation, methodName);
             invocation.put(TIMEOUT_KEY, timeout);
             if (isOneway) {
+                // 是单向的，不需要返回结果
                 boolean isSent = getUrl().getMethodParameter(methodName, Constants.SENT_KEY, false);
                 currentClient.send(inv, isSent);
                 return AsyncRpcResult.newDefaultAsyncResult(invocation);
             } else {
+                // 不是单向的，需要获取返回结果
                 ExecutorService executor = getCallbackExecutor(getUrl(), inv);
                 CompletableFuture<AppResponse> appResponseFuture =
                         currentClient.request(inv, timeout, executor).thenApply(obj -> (AppResponse) obj);

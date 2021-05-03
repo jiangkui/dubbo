@@ -92,12 +92,14 @@ public class NettyServer extends AbstractServer implements RemotingServer {
                 getUrl().getPositiveParameter(IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS), // 13
                 "NettyServerWorker");
 
-        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
-        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
-        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
-        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
-        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
-        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
+        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
+        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
+        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
+        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
+        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
+        // DubboProtocol#requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
+        // 原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
+        // 关于 handler 的详细介绍可以参见：https://blog.csdn.net/heroqiang/article/details/79620318
         final NettyServerHandler nettyServerHandler = new NettyServerHandler(getUrl(), this);
         channels = nettyServerHandler.getChannels();
 

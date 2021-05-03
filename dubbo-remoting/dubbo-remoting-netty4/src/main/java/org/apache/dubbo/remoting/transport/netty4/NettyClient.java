@@ -85,6 +85,8 @@ public class NettyClient extends AbstractClient {
     /**
      * Init bootstrap
      *
+     * 这里也是比较熟悉的代码了对吧。
+     *
      * @throws Throwable
      */
     @Override

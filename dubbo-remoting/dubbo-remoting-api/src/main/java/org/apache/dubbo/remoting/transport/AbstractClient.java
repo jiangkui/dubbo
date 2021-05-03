@@ -60,6 +60,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         initExecutor(url);
 
         try {
+            // 启动一个 netty client
             doOpen();
         } catch (Throwable t) {
             close();
@@ -195,6 +196,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                 return;
             }
 
+            // 开启链接？
             doConnect();
 
             if (!isConnected()) {

@@ -92,6 +92,7 @@ public class HeaderExchangeClient implements ExchangeClient {
 
     @Override
     public CompletableFuture<Object> request(Object request, int timeout, ExecutorService executor) throws RemotingException {
+        // HeaderExchangeChannel#request(java.lang.Object, int, java.util.concurrent.ExecutorService)
         return channel.request(request, timeout, executor);
     }
 
