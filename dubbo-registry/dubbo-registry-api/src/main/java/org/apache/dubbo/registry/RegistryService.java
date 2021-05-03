@@ -24,6 +24,8 @@ import java.util.List;
  * RegistryService. (SPI, Prototype, ThreadSafe)
  *
  * fixme jiangkui
+ * 接口，定义了注册中心的基本功能，注册、取消注册、订阅、取消订阅、查看符合条件的注册数据。
+ *
  * Dubbo 的 zookeeper 中心的实现原理，其实不难，理解了注册中心要做的最重要的两件事：注册和订阅，然后再基于 zk 的目录和通知的机制，就很容易理解源码。
  *
  * @see org.apache.dubbo.registry.Registry

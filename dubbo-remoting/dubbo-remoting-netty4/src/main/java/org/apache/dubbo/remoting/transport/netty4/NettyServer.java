@@ -92,6 +92,12 @@ public class NettyServer extends AbstractServer implements RemotingServer {
                 getUrl().getPositiveParameter(IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS), // 13
                 "NettyServerWorker");
 
+        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
+        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
+        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
+        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
+        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
+        // fixme jiangkui 遗留问题 NettyServer 运行时是如何处理的？
         final NettyServerHandler nettyServerHandler = new NettyServerHandler(getUrl(), this);
         channels = nettyServerHandler.getChannels();
 
@@ -111,8 +117,12 @@ public class NettyServer extends AbstractServer implements RemotingServer {
                                     SslHandlerInitializer.sslServerHandler(getUrl(), nettyServerHandler));
                         }
                         ch.pipeline()
+                                // 解码器，内部有具体的按协议解码实现，接口是：Code2，例如：DubboCodec
                                 .addLast("decoder", adapter.getDecoder())
+                                // 编码器，内部有具体的按协议编码实现，接口是：Code2，例如：DubboCodec
                                 .addLast("encoder", adapter.getEncoder())
+                                // Netty 的心跳检测机制：用来检测远端是否存活，如果不存活或活跃则对空闲Socket连接进行处理避免资源的浪费；
+                                // https://blog.csdn.net/u013967175/article/details/78591810
                                 .addLast("server-idle-handler", new IdleStateHandler(0, 0, idleTimeout, MILLISECONDS))
                                 .addLast("handler", nettyServerHandler);
                     }

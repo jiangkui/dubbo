@@ -67,6 +67,10 @@ import static org.apache.dubbo.registry.Constants.REGISTRY__LOCAL_FILE_CACHE_ENA
 
 /**
  * AbstractRegistry. (SPI, Prototype, ThreadSafe)
+ *
+ * - 实现注册、取消注册、订阅、取消订阅的基础功能，并提供持久化操作保存到文件，以便注册中心在宕机重启恢复服务提供者列表等信息。
+ * - 注册&订阅方法：并没有向注册中心真正注册，简单的放入注册的本地变量 registered 存储，订阅也是。由`FailbackRegistry`实现具体的注册功能，并提供失败重试特性。
+ * - notify(List<URL> urls)方法：Registry 的URL 更新，都会通过这个方法通知监听器。
  */
 public abstract class AbstractRegistry implements Registry {
 

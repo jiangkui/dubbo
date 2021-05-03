@@ -46,10 +46,15 @@ public abstract class AbstractProtocol implements Protocol {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
+    // 这里缓存了所有的已经暴露的服务，包括 InjvmProtocol 和 DubboProtocol
+    // key 是服务名，例如：org.apache.dubbo.demo.DemoService:20880
+    // 方法调用时，会通过 channel --> exporterMap --> 查找到对应的 Exporter --> Invoker --> 执行 invoker.invoke();
+    // 参见：org.apache.dubbo.rpc.protocol.dubbo.DubboProtocol#getInvoker
     protected final Map<String, Exporter<?>> exporterMap = new ConcurrentHashMap<String, Exporter<?>>();
 
     /**
-     * <host:port, ProtocolServer>
+     * Netty 服务相关数据，key格式是，ip:port，例如，11.0.94.189:20880
+     * - <host:port, ProtocolServer>
      */
     protected final Map<String, ProtocolServer> serverMap = new ConcurrentHashMap<>();
 

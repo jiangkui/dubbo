@@ -35,10 +35,13 @@ import java.util.List;
  */
 final public class NettyCodecAdapter {
 
+    // 编码器
     private final ChannelHandler encoder = new InternalEncoder();
 
+    // 解码器
     private final ChannelHandler decoder = new InternalDecoder();
 
+    // 编解码协议：有 Dubbo 协议、Thrift 协议
     private final Codec2 codec;
 
     private final URL url;
@@ -59,21 +62,48 @@ final public class NettyCodecAdapter {
         return decoder;
     }
 
+    /**
+     * 内部的一个 Netty 编码器
+     */
     private class InternalEncoder extends MessageToByteEncoder {
 
+        /**
+         * 编码：对象 --> byte
+         * @param ctx 上下文
+         * @param msg 对象
+         * @param out 输出流
+         */
         @Override
         protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+            // 例如：Long 类型的编码器
+            // out.writeLong(Long.parseLong(msg.toString()));
+
             org.apache.dubbo.remoting.buffer.ChannelBuffer buffer = new NettyBackedChannelBuffer(out);
             Channel ch = ctx.channel();
             NettyChannel channel = NettyChannel.getOrAddChannel(ch, url, handler);
+            // 使用具体的协议进行编码
+            // 后续流程如何？ 如何找到对应的 Service 发送？
             codec.encode(channel, buffer, msg);
         }
     }
 
+    /**
+     * 内部的一个 Netty 解码器
+     */
     private class InternalDecoder extends ByteToMessageDecoder {
 
+        /**
+         * 解码：byte --> 对象
+         * @param ctx 上下文
+         * @param input 入站的 ByteBuf
+         * @param out list集合，将解码后的数据传给下一个 Handler
+         */
         @Override
         protected void decode(ChannelHandlerContext ctx, ByteBuf input, List<Object> out) throws Exception {
+            // 例如：Long 类型的解码器，long 是8个字节，buffer满8个字节后，在读取。
+            // if (input.readableBytes() >= 8) {
+            //     out.add(input.readLong());
+            // }
 
             ChannelBuffer message = new NettyBackedChannelBuffer(input);
 
@@ -82,6 +112,8 @@ final public class NettyCodecAdapter {
             // decode object.
             do {
                 int saveReaderIndex = message.readerIndex();
+                // 进行解码，后续流程如何？
+                // response 如何找到对应的 Invoker 执行？
                 Object msg = codec.decode(channel, message);
                 if (msg == Codec2.DecodeResult.NEED_MORE_INPUT) {
                     message.readerIndex(saveReaderIndex);

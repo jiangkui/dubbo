@@ -121,6 +121,7 @@ public class DubboProtocol extends AbstractProtocol {
             }
 
             Invocation inv = (Invocation) message;
+            // 通过 message 查找对应的 Invoker，方法调用时，会通过 channel --> exporterMap --> 查找到对应的 Exporter --> Invoker
             Invoker<?> invoker = getInvoker(channel, inv);
             // need to consider backward-compatibility if it's a callback
             if (Boolean.TRUE.toString().equals(inv.getObjectAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
@@ -146,6 +147,7 @@ public class DubboProtocol extends AbstractProtocol {
                 }
             }
             RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
+            // 进行调用
             Result result = invoker.invoke(inv);
             return result.thenApply(Function.identity());
         }
@@ -383,8 +385,9 @@ public class DubboProtocol extends AbstractProtocol {
             // 下面还有两层：
             //      - transport 网络传输层：抽象 mina 和 netty 为统一接口，以 Message 为中心，扩展接口为 Channel, Transporter, Client, Server, Codec
             //      - serialize 数据序列化层：可复用的一些工具，扩展接口为 Serialization, ObjectInput, ObjectOutput, ThreadPool
-            // handler链路：DubboProtocol.requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
-            //      原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
+            // handler链路：
+            //      - DubboProtocol.requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
+            //      - 原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);

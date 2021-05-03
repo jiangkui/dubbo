@@ -309,9 +309,11 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
      * 暴露服务
      */
     protected synchronized void doExport() {
+        // 取消导出
         if (unexported) {
             throw new IllegalStateException("The service " + interfaceClass.getName() + " has already unexported!");
         }
+        // 已经导出
         if (exported) {
             return;
         }
@@ -320,6 +322,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
         if (StringUtils.isEmpty(path)) {
             path = interfaceName;
         }
+        // 开始导出
         doExportUrls();
     }
 
@@ -330,7 +333,7 @@ public class ServiceConfig<T> extends ServiceConfigBase<T> {
      *
      * 方法代码较长，分支较多，需要小伙伴耐心看。代码容易理解，只是参数非常多。上面说了，URL 参数是 Dubbo 的每个扩展点通信的同一参数，所以这个方法比较重要的一部分是组装 URL 参数。
      *
-     * @param protocolConfig 一个对象 ProtocolConfig
+     * @param protocolConfig 一个对象 ProtocolConfig，name=dubbo
      * @param registryURLs registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-provider&dubbo=2.0.2&pid=60873&registry=zookeeper&timestamp=1617328196333
      */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {

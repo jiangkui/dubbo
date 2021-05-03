@@ -390,6 +390,9 @@ public class ThriftCodec implements Codec2 {
 
     }
 
+    /**
+     * thrift协议：request 编码
+     */
     private void encodeRequest(Channel channel, ChannelBuffer buffer, Request request)
             throws IOException {
 
@@ -525,6 +528,9 @@ public class ThriftCodec implements Codec2 {
 
     }
 
+    /**
+     * thrift协议：response 编码
+     */
     private void encodeResponse(Channel channel, ChannelBuffer buffer, Response response)
             throws IOException {
 
