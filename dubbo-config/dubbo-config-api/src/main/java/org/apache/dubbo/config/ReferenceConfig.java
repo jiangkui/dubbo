@@ -411,8 +411,8 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             }
 
             // 只有一个注册中心或者服务提供者
-            if (urls.size() == 1) {
-                // 构建 invoker 实例，AbstractProtocol#refer
+            if (urls.size() == 1) { // registry://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-consumer&dubbo=2.0.2&pid=3805&refer=application%3Ddubbo-demo-api-consumer%26dubbo%3D2.0.2%26generic%3Dtrue%26interface%3Dorg.apache.dubbo.demo.DemoService%26pid%3D3805%26register.ip%3D192.168.1.102%26side%3Dconsumer%26sticky%3Dfalse%26timestamp%3D1620291787065&registry=zookeeper&timestamp=1620291787107
+                // 走 RegistryProtocol
                 invoker = REF_PROTOCOL.refer(interfaceClass, urls.get(0));
             } else { // 多个注册中心或多个服务提供者，或者两者混合
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();

@@ -107,7 +107,7 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
     }
 
     @Override
-    public synchronized void migrateToServiceDiscoveryInvoker(boolean forceMigrate) {
+    public synchronized void migrateToServiceDiscoveryInvoker(boolean forceMigrate) { // false
         if (!forceMigrate) {
             refreshServiceDiscoveryInvoker();
             refreshInterfaceInvoker();
@@ -304,7 +304,7 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
         }
 
         if (invoker == null) {
-            return;
+            return; // 走这里
         }
         DynamicDirectory<T> directory = (DynamicDirectory<T>) invoker.getDirectory();
         directory.setInvokersChangedListener(null);

@@ -30,6 +30,12 @@ public class ChannelHandlers {
     protected ChannelHandlers() {
     }
 
+    /**
+     *
+     * @param handler DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     * @param url
+     * @return Handler完整链路：MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     */
     public static ChannelHandler wrap(ChannelHandler handler, URL url) {
         return ChannelHandlers.getInstance().wrapInternal(handler, url);
     }
@@ -42,6 +48,14 @@ public class ChannelHandlers {
         INSTANCE = instance;
     }
 
+    // MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher
+
+    /**
+     * 继续包装 handler
+     * @param handler DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     * @param url
+     * @return 完整链路：MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     */
     protected ChannelHandler wrapInternal(ChannelHandler handler, URL url) {
         return new MultiMessageHandler(new HeartbeatHandler(ExtensionLoader.getExtensionLoader(Dispatcher.class)
                 .getAdaptiveExtension().dispatch(handler, url)));

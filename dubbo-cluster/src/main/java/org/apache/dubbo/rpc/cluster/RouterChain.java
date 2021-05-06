@@ -50,10 +50,23 @@ public class RouterChain<T> {
         List<RouterFactory> extensionFactories = ExtensionLoader.getExtensionLoader(RouterFactory.class)
                 .getActivateExtension(url, "router");
 
+        /*
+            SPI：org.apache.dubbo.rpc.cluster.RouterFactory
+                file=org.apache.dubbo.rpc.cluster.router.file.FileRouterFactory
+                script=org.apache.dubbo.rpc.cluster.router.script.ScriptRouterFactory
+                condition=org.apache.dubbo.rpc.cluster.router.condition.ConditionRouterFactory
+                service=org.apache.dubbo.rpc.cluster.router.condition.config.ServiceRouterFactory
+                app=org.apache.dubbo.rpc.cluster.router.condition.config.AppRouterFactory
+                tag=org.apache.dubbo.rpc.cluster.router.tag.TagRouterFactory
+                mock=org.apache.dubbo.rpc.cluster.router.mock.MockRouterFactory
+
+         */
+        // 有4个 routers：MockInvokersSelector、TagRouter、AppRouter、ServiceRouter
         List<Router> routers = extensionFactories.stream()
                 .map(factory -> factory.getRouter(url))
                 .collect(Collectors.toList());
 
+        // 内部会进行排序。最终顺序：MockInvokersSelector、TagRouter、AppRouter、ServiceRouter
         initWithRouters(routers);
     }
 

@@ -56,6 +56,9 @@ public class ProtocolListenerWrapper implements Protocol {
         return protocol.getDefaultPort();
     }
 
+    /**
+     * 获取 Exporter
+     */
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         if (UrlUtils.isRegistry(invoker.getUrl())) {
@@ -67,11 +70,15 @@ public class ProtocolListenerWrapper implements Protocol {
                         .getActivateExtension(invoker.getUrl(), EXPORTER_LISTENER_KEY)));
     }
 
+    /**
+     * 获取 Invoker
+     */
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
         if (UrlUtils.isRegistry(url)) {
-            return protocol.refer(type, url);
+            return protocol.refer(type, url); // 如果是 registry 则直接走这里，没有filter
         }
+        // 这里的 protocol 基本是 dubbo 实现
         return new ListenerInvokerWrapper<T>(protocol.refer(type, url),
                 Collections.unmodifiableList(
                         ExtensionLoader.getExtensionLoader(InvokerListener.class)

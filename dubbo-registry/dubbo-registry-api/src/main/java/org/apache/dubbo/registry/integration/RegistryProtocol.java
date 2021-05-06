@@ -211,6 +211,7 @@ public class RegistryProtocol implements Protocol {
 
         // Subscribe the override data
         // 向注册中心进行订阅 override 数据
+        // 提供者订阅时，会影响同一JVM即暴露服务，又引用同一服务的的场景，因为subscribed以服务名为缓存的key，导致订阅信息覆盖。
         // FIXME When the provider subscribes, it will affect the scene : a certain JVM exposes the service and call
         //  the same service. Because the subscribed is cached key with the name of the service, it causes the
         //  subscription information to cover.
@@ -243,14 +244,14 @@ public class RegistryProtocol implements Protocol {
         }
 
         // register stated url on provider model
+        // 更新 ServiceRepository 内 ProviderModel 的 RegisterStatedURL 属性
         registerStatedUrl(registryUrl, registeredProviderUrl, register);
-
 
         exporter.setRegisterUrl(registeredProviderUrl);
         exporter.setSubscribeUrl(overrideSubscribeUrl);
 
         // Deprecated! Subscribe to override rules in 2.6.x or before.
-        // 订阅逻辑，这里都订阅啥了？
+        // 订阅逻辑，这里都订阅啥了？参见上面的某个特殊场景：既提供服务又应用服务
         registry.subscribe(overrideSubscribeUrl, overrideSubscribeListener);
 
         // 这里都通知啥了？
@@ -465,6 +466,10 @@ public class RegistryProtocol implements Protocol {
 
     /**
      * 通过 refer 来构建 Invoker 实体
+     * @param type org.apache.dubbo.rpc.service.GenericService
+     * @param url zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-consumer&dubbo=2.0.2&pid=4564&refer=application%3Ddubbo-demo-api-consumer%26dubbo%3D2.0.2%26generic%3Dtrue%26interface%3Dorg.apache.dubbo.demo.DemoService%26pid%3D4564%26register.ip%3D192.168.1.102%26side%3Dconsumer%26sticky%3Dfalse%26timestamp%3D1620292813390&timestamp=1620292813436
+     * @return
+     * @throws RpcException
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -489,16 +494,48 @@ public class RegistryProtocol implements Protocol {
             }
         }
 
+        /*
+            `SPI：org.apache.dubbo.rpc.cluster.Cluster`
+                mock=org.apache.dubbo.rpc.cluster.support.wrapper.MockClusterWrapper --> 注意这个是 Wrapper
+                failover=org.apache.dubbo.rpc.cluster.support.FailoverCluster --> default
+                failfast=org.apache.dubbo.rpc.cluster.support.FailfastCluster
+                failsafe=org.apache.dubbo.rpc.cluster.support.FailsafeCluster
+                failback=org.apache.dubbo.rpc.cluster.support.FailbackCluster
+                forking=org.apache.dubbo.rpc.cluster.support.ForkingCluster
+                available=org.apache.dubbo.rpc.cluster.support.AvailableCluster
+                mergeable=org.apache.dubbo.rpc.cluster.support.MergeableCluster
+                broadcast=org.apache.dubbo.rpc.cluster.support.BroadcastCluster
+                zone-aware=org.apache.dubbo.rpc.cluster.support.registry.ZoneAwareCluster
+            最终结构：MockClusterWrapper --> FailoverCluster
+         */
         Cluster cluster = Cluster.getCluster(qs.get(CLUSTER_KEY));
-        // 创建引用，要解决几个问题：这块有点看不懂呀。
+        // 创建引用
         return doRefer(cluster, registry, type, url, qs);
     }
 
+    /**
+     *
+     * @param cluster MockClusterWrapper --> FailoverCluster
+     * @param registry ListenerRegistryWrapper --> ZookeeperRegistry
+     * @param type interface org.apache.dubbo.rpc.service.GenericService
+     * @param url zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-consumer&dubbo=2.0.2&pid=4564&refer=application%3Ddubbo-demo-api-consumer%26dubbo%3D2.0.2%26generic%3Dtrue%26interface%3Dorg.apache.dubbo.demo.DemoService%26pid%3D4564%26register.ip%3D192.168.1.102%26side%3Dconsumer%26sticky%3Dfalse%26timestamp%3D1620292813390&timestamp=1620292813436
+     * @param parameters 9个：
+     *          "side" -> "consumer"
+     *          "application" -> "dubbo-demo-api-consumer"
+     *          "register.ip" -> "192.168.1.102"
+     *          "sticky" -> "false"
+     *          "dubbo" -> "2.0.2"
+     *          "pid" -> "4564"
+     *          "interface" -> "org.apache.dubbo.demo.DemoService"
+     *          "generic" -> "true"
+     *          "timestamp" -> "1620292813390"
+     * @return
+     */
     protected <T> Invoker<T> doRefer(Cluster cluster, Registry registry, Class<T> type, URL url, Map<String, String> parameters) {
-        // 创建服务消费者 URL
+        // 创建服务消费者 URL，consumer://192.168.1.102/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=4564&side=consumer&sticky=false&timestamp=1620292813390
         URL consumerUrl = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
 
-        // 将多个服务提供者合并
+        // 将多个服务提供者合并，new MigrationInvoker()
         ClusterInvoker<T> migrationInvoker = getMigrationInvoker(this, cluster, registry, type, url, consumerUrl);
 
         // 拦截调用程序
@@ -551,9 +588,9 @@ public class RegistryProtocol implements Protocol {
         URL urlToRegistry = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (directory.isShouldRegister()) {
             directory.setRegisteredConsumerUrl(urlToRegistry);
-            registry.register(directory.getRegisteredConsumerUrl());
+            registry.register(directory.getRegisteredConsumerUrl());//consumer://192.168.1.102/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&category=consumers&check=false&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=10237&side=consumer&sticky=false&timestamp=1620301118438
         }
-        directory.buildRouterChain(urlToRegistry);
+        directory.buildRouterChain(urlToRegistry);// 走：DynamicDirectory
         directory.subscribe(toSubscribeUrl(urlToRegistry));
 
         return (ClusterInvoker<T>) cluster.join(directory);

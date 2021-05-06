@@ -71,11 +71,17 @@ public class NettyServer extends AbstractServer implements RemotingServer {
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
 
+    /**
+     *
+     * @param url
+     * @param handler DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     * @throws RemotingException
+     */
     public NettyServer(URL url, ChannelHandler handler) throws RemotingException {
         // you can customize name and type of client thread pool by THREAD_NAME_KEY and THREADPOOL_KEY in CommonConstants.
         // the handler will be wrapped: MultiMessageHandler->HeartbeatHandler->handler
         // 您可以在 CommonConstants 中通过 THREAD_NAME_KEY 和 THREADPOOL_KEY 自定义客户端线程池的名称和类型。
-        // 处理程序将被包装：MultiMessageHandler-> HeartbeatHandler-> handler
+        // 处理程序将被包装：MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher
         super(ExecutorUtil.setThreadName(url, SERVER_THREAD_POOL_NAME), ChannelHandlers.wrap(handler, url));
     }
 
@@ -92,14 +98,15 @@ public class NettyServer extends AbstractServer implements RemotingServer {
                 getUrl().getPositiveParameter(IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS), // 13
                 "NettyServerWorker");
 
-        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
-        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
-        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
-        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
-        // fixme jiangkui handler 这块还是没整明白，明天早上断点调试走一遍，或者先把文章看完
-        // DubboProtocol#requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
-        // 原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
-        // 关于 handler 的详细介绍可以参见：https://blog.csdn.net/heroqiang/article/details/79620318
+        /*
+            关键点在这里
+            this 的父类是 AbstractPeer，在构造时：AbstractPeer.handler = 是拼好的完整链路，如下：
+            - 【Handler完整链路】：MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+
+            - 以下这些文章写的都不怎么对，仅供参考！！！
+            关于 handler 的详细介绍可以参见：https://blog.csdn.net/heroqiang/article/details/79620318
+            原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
+         */
         final NettyServerHandler nettyServerHandler = new NettyServerHandler(getUrl(), this);
         channels = nettyServerHandler.getChannels();
 
@@ -126,6 +133,7 @@ public class NettyServer extends AbstractServer implements RemotingServer {
                                 // Netty 的心跳检测机制：用来检测远端是否存活，如果不存活或活跃则对空闲Socket连接进行处理避免资源的浪费；
                                 // https://blog.csdn.net/u013967175/article/details/78591810
                                 .addLast("server-idle-handler", new IdleStateHandler(0, 0, idleTimeout, MILLISECONDS))
+                                // 关键点
                                 .addLast("handler", nettyServerHandler);
                     }
                 });

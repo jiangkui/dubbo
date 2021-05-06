@@ -93,6 +93,12 @@ public class MigrationRuleListener implements RegistryProtocolListener, Configur
 
     }
 
+    /**
+     *
+     * @param registryProtocol RegistryProtocol instance
+     * @param invoker          invoker
+     * @param url consumer://192.168.1.102/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=4720&side=consumer&sticky=false&timestamp=1620293017867
+     */
     @Override
     public synchronized  void onRefer(RegistryProtocol registryProtocol, ClusterInvoker<?> invoker, URL url) {
         MigrationInvoker<?> migrationInvoker = (MigrationInvoker<?>) invoker;
@@ -100,6 +106,7 @@ public class MigrationRuleListener implements RegistryProtocolListener, Configur
         MigrationRuleHandler<?> migrationListener = new MigrationRuleHandler<>(migrationInvoker);
         listeners.add(migrationListener);
 
+        // 这里面有不少逻辑
         migrationListener.doMigrate(rawRule);
     }
 

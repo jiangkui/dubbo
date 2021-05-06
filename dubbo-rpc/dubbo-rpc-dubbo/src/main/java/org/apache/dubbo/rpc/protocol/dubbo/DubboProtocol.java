@@ -111,6 +111,9 @@ public class DubboProtocol extends AbstractProtocol {
      */
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
 
+        /**
+         * 回复
+         */
         @Override
         public CompletableFuture<Object> reply(ExchangeChannel channel, Object message) throws RemotingException {
 
@@ -124,9 +127,11 @@ public class DubboProtocol extends AbstractProtocol {
             // 通过 message 查找对应的 Invoker，方法调用时，会通过 channel --> exporterMap --> 查找到对应的 Exporter --> Invoker
             Invoker<?> invoker = getInvoker(channel, inv);
             // need to consider backward-compatibility if it's a callback
+            // 如果它是回调，则需要考虑向后兼容性
             if (Boolean.TRUE.toString().equals(inv.getObjectAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
                 String methodsStr = invoker.getUrl().getParameters().get("methods");
                 boolean hasMethod = false;
+                // 搜索是否有相关方法的存在
                 if (methodsStr == null || !methodsStr.contains(",")) {
                     hasMethod = inv.getMethodName().equals(methodsStr);
                 } else {
@@ -138,6 +143,7 @@ public class DubboProtocol extends AbstractProtocol {
                         }
                     }
                 }
+                // 没有搜索到相关方法直接返回null
                 if (!hasMethod) {
                     logger.warn(new IllegalStateException("The methodName " + inv.getMethodName()
                             + " not found in callback service interface ,invoke will be ignored."
@@ -147,16 +153,24 @@ public class DubboProtocol extends AbstractProtocol {
                 }
             }
             RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
-            // 进行调用
+            // 进行调用，这里的 Invoker 被包装了好几层。由 ProtocolFilterWrapper 包装的，参见：ProtocolFilterWrapper#buildInvokerChain
+            // ProtocolFilterWrapper：buildInvokerChain 会加入很多 filter，例如：EchoFilter、ClassLoaderFilter、GenericFIlter、ContextFilter、TraceFilter、TimeoutFilter、MonitorFilter、ExceptionFilter
+            // ProtocolListenerWrapper
+            // RegistryProtocol.InvokerDelegete
+            // 最终会调用到：JavassistProxyFactory生成的Wrapper包装类的invokeMethod方法，来真正调用我们提供的服务并获取返回结果
+            // 最后会用 AbstractPeer.send 把结果发回去
             Result result = invoker.invoke(inv);
             return result.thenApply(Function.identity());
         }
 
+        /**
+         * 接受请求
+         */
         @Override
         public void received(Channel channel, Object message) throws RemotingException {
             if (message instanceof Invocation) {
+                // 请求处理应答
                 reply((ExchangeChannel) channel, message);
-
             } else {
                 super.received(channel, message);
             }
@@ -385,9 +399,8 @@ public class DubboProtocol extends AbstractProtocol {
             // 下面还有两层：
             //      - transport 网络传输层：抽象 mina 和 netty 为统一接口，以 Message 为中心，扩展接口为 Channel, Transporter, Client, Server, Codec
             //      - serialize 数据序列化层：可复用的一些工具，扩展接口为 Serialization, ObjectInput, ObjectOutput, ThreadPool
-            // handler链路：
-            //      - DubboProtocol.requestHandler --> DecodeHandler --> HeaderExchangeHandler --> MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> NettyHandler
-            //      - 原文链接：https://blog.csdn.net/heroqiang/article/details/82766196
+            // handler链路：这里只有从 requestHandler，内部会继续包装
+            //      - MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);

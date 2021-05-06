@@ -85,14 +85,16 @@ public class ProtocolFilterWrapper implements Protocol {
         if (UrlUtils.isRegistry(invoker.getUrl())) {
             return protocol.export(invoker); // 如果是 registry 则直接走这里，没有filter
         }
+        // 这里面一共有8个filter
         return protocol.export(buildInvokerChain(invoker, SERVICE_FILTER_KEY, CommonConstants.PROVIDER));
     }
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
         if (UrlUtils.isRegistry(url)) {
-            return protocol.refer(type, url);
+            return protocol.refer(type, url);// 如果是 registry 则直接走这里，没有filter
         }
+        // 这里面一共有8个filter
         return buildInvokerChain(protocol.refer(type, url), REFERENCE_FILTER_KEY, CommonConstants.CONSUMER);
     }
 

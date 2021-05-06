@@ -75,8 +75,12 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         }
     }
 
+    /**
+     * 处理请求，并发送响应
+     */
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
         Response res = new Response(req.getId(), req.getVersion());
+        // 解码失败处理
         if (req.isBroken()) {
             Object data = req.getData();
 
@@ -97,6 +101,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         // find handler by message class.
         Object msg = req.getData();
         try {
+            // 请求处理应答，这个 handler 是 org.apache.dubbo.rpc.protocol.dubbo.DubboProtocol#requestHandler
             CompletionStage<Object> future = handler.reply(channel, msg);
             future.whenComplete((appResult, t) -> {
                 try {
@@ -107,6 +112,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                         res.setStatus(Response.SERVICE_ERROR);
                         res.setErrorMessage(StringUtils.toString(t));
                     }
+                    // 发送返回结果：AbstractPeer#send
                     channel.send(res);
                 } catch (RemotingException e) {
                     logger.warn("Send result to consumer failed, channel is " + channel + ", msg is " + e);
@@ -172,24 +178,31 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
     public void received(Channel channel, Object message) throws RemotingException {
         final ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);
         if (message instanceof Request) {
+            // 处理请求
             // handle request.
             Request request = (Request) message;
             if (request.isEvent()) {
+                // 处理事件，判断是否是只读请求并设置只读标记
                 handlerEvent(channel, request);
             } else {
                 if (request.isTwoWay()) {
+                    // 处理请求，获得响应，并回复相应
                     handleRequest(exchangeChannel, request);
                 } else {
+                    // 回复响应
                     handler.received(exchangeChannel, request.getData());
                 }
             }
         } else if (message instanceof Response) {
+            // 响应消息处理
             handleResponse(channel, (Response) message);
         } else if (message instanceof String) {
             if (isClientSide(channel)) {
+                // dubbo客户端不支持String类型的消息
                 Exception e = new Exception("Dubbo client can not supported string message: " + message + " in channel: " + channel + ", url: " + channel.getUrl());
                 logger.error(e.getMessage(), e);
             } else {
+                // 命令响应
                 String echo = handler.telnet(channel, (String) message);
                 if (echo != null && echo.length() > 0) {
                     channel.send(echo);

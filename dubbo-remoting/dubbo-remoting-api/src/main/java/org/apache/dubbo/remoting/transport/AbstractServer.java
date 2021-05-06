@@ -59,7 +59,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Remotin
     /**
      *
      * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&bind.ip=11.0.94.189&bind.port=20880&channel.readonly.sent=true&codec=dubbo&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&heartbeat=60000&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=94963&release=&side=provider&timestamp=1617438484498
-     * @param handler MultiMessageHandler --> HeartbeatHandler --> AllChannelHandler --> DecodeHandler.
+     * @param handler 已经是完整链路：MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
      */
     public AbstractServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, handler);

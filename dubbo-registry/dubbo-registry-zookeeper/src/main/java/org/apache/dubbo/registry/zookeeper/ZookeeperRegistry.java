@@ -75,7 +75,15 @@ public class ZookeeperRegistry extends FailbackRegistry {
     private final ZookeeperClient zkClient;
 
     public ZookeeperRegistry(URL url, ZookeeperTransporter zookeeperTransporter) {
-        super(url); /* 调用父类构造方法，很关键里面有重试机制 */
+        /*
+            - `父父类，AbstractRegistry`：
+                - 提供本地缓存服务：实现了 Registry，在实现注册和取消注册、订阅和取消订阅功能的基础上面，对注册数据提供了持久化操作保存到文件，以便注册中心在宕机后重新启动恢复服务提供者列表等信息。
+                - 解决问题：consumer从注册中心订阅了provider等信息后会缓存到本地文件中，这样当注册中心不可用时，consumer启动时就可以加载这个缓存文件里面的内容与provider进行交互，这样就可以不依赖注册中心，但是无法获取到新的provider变更通知，所以如果provider信息在注册中心不可用这段时间发生了很大变化，那就很可能会出现服务无法调用的情况，
+                - 缓存位置： /Users/jiangkui/.dubbo/dubbo-registry-`application`-cache
+            - `父类，FailbackRegistry`：
+                - 提供失败重试功能（register、Unregister、subscribe、Unsubscribe、Heartbeat、Reconnect等等），用 HashedWheelTimer（定时轮算法），参见：https://juejin.cn/post/6844904019710722062
+         */
+        super(url);
         if (url.isAnyHost()) {
             throw new IllegalStateException("registry address == null");
         }

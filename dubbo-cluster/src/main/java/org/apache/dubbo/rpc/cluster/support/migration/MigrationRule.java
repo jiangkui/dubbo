@@ -57,13 +57,13 @@ public class MigrationRule {
         this.step = step;
     }
 
-    public static MigrationRule parse(String rawRule) {
+    public static MigrationRule parse(String rawRule) {// rawRule --> INIT
         if (null == configuration) {
             return getMigrationRule(null);
         }
 
         if (StringUtils.isBlank(rawRule) || "INIT".equals(rawRule)) {
-            String step = (String)configuration.getInternalProperty(DUBBO_SERVICEDISCOVERY_MIGRATION_KEY);
+            String step = (String)configuration.getInternalProperty(DUBBO_SERVICEDISCOVERY_MIGRATION_KEY); // step --> null
             return getMigrationRule(step);
 
         }

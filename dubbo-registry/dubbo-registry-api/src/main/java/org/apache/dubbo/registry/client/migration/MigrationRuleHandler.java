@@ -34,6 +34,10 @@ public class MigrationRuleHandler<T> {
 
     private MigrationStep currentStep;
 
+    /**
+     * 做迁移？
+     * @param rawRule
+     */
     public void doMigrate(String rawRule) {
         MigrationRule rule = MigrationRule.parse(rawRule);
 
@@ -43,7 +47,7 @@ public class MigrationRuleHandler<T> {
             }
             return;
         } else {
-            currentStep = rule.getStep();
+            currentStep = rule.getStep(); // currentStep --> APPLICATION_FIRST
         }
 
         migrationInvoker.setMigrationRule(rule);
@@ -57,7 +61,7 @@ public class MigrationRuleHandler<T> {
         } else {
             switch (rule.getStep()) {
                 case APPLICATION_FIRST:
-                    migrationInvoker.migrateToServiceDiscoveryInvoker(false);
+                    migrationInvoker.migrateToServiceDiscoveryInvoker(false);// 有不少内容
                     break;
                 case FORCE_APPLICATION:
                     migrationInvoker.migrateToServiceDiscoveryInvoker(true);

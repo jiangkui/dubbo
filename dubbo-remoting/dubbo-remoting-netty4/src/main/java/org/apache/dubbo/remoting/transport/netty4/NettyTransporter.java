@@ -30,12 +30,24 @@ public class NettyTransporter implements Transporter {
 
     public static final String NAME = "netty";
 
+    /**
+     * Handler完整链路：MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     *
+     * @param url     server url
+     * @param handler DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     */
     @Override
     public RemotingServer bind(URL url, ChannelHandler handler) throws RemotingException {
         // 这里内部会启动 NettyServer
         return new NettyServer(url, handler);
     }
 
+    /**
+     * Handler完整链路：MultiMessageHandler --> HeartbeatHandler --> SPI.Dispatcher --> DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     *
+     * @param url     server url
+     * @param handler DecodeHandler --> HeaderExchangeHandler --> DubboProtocol.requestHandler --> 8个filter --> 用户Server代码
+     */
     @Override
     public Client connect(URL url, ChannelHandler handler) throws RemotingException {
         // 这里内部会初始化 Netty Client

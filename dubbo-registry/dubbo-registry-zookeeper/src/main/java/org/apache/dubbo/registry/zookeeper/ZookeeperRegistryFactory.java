@@ -34,7 +34,7 @@ public class ZookeeperRegistryFactory extends AbstractRegistryFactory {
      *
      * 详情参见：META-INF/dubbo/internal 的 org.apache.dubbo.registry.RegistryFactory 文件
      *
-     * 文件内容：ookeeper=org.apache.dubbo.registry.zookeeper.ZookeeperRegistryFactory
+     * 文件内容：zookeeper=org.apache.dubbo.registry.zookeeper.ZookeeperRegistryFactory
      *
      * Invisible injection of zookeeper client via IOC/SPI
      * @param zookeeperTransporter

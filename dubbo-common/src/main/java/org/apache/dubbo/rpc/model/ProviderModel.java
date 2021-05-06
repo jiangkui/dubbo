@@ -37,7 +37,7 @@ public class ProviderModel {
     private final Object serviceInstance;
     private final ServiceDescriptor serviceModel;
     private final ServiceConfigBase<?> serviceConfig;
-    private final List<RegisterStatedURL> urls;
+    private final List<RegisterStatedURL> urls; // provider 注册到 Registry 后，会更新此属性，调用处：RegistryProtocol#registerStatedUrl
 
     public ProviderModel(String serviceKey,
                          Object serviceInstance,

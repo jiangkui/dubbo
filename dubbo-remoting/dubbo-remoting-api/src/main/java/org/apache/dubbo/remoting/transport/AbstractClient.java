@@ -70,7 +70,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         }
 
         try {
-            // connect.
+            // connect. 会与 NettyServer 建立链接，并拿到 Channel --> NettyClient.this.channel = newChannel;
             connect();
             if (logger.isInfoEnabled()) {
                 logger.info("Start " + getClass().getSimpleName() + " " + NetUtils.getLocalAddress() + " connect to the server " + getRemoteAddress());
