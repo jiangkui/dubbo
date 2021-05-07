@@ -45,6 +45,9 @@ import static org.apache.dubbo.rpc.cluster.Constants.FAIL_BACK_TASKS_KEY;
  * Especially useful for services of notification.
  *
  * <a href="http://en.wikipedia.org/wiki/Failback">Failback</a>
+ *
+ * 失败自动恢复
+ * 原文：https://dubbo.apache.org/zh/docs/v2.7/dev/source/cluster/#m-zhdocsv27devsourcecluster
  */
 public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
@@ -92,6 +95,12 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
         }
     }
 
+    /**
+     * 快速失败：
+     *
+     * 会在调用失败后，返回一个空结果给服务消费者。并通过定时任务对失败的调用进行重传，适合执行消息通知等操作。下面来看一下它的实现逻辑。
+     * 原文：https://dubbo.apache.org/zh/docs/v2.7/dev/source/cluster/#m-zhdocsv27devsourcecluster
+     */
     @Override
     protected Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         Invoker<T> invoker = null;

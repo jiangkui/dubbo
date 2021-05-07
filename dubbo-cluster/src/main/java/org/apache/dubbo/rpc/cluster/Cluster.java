@@ -30,6 +30,14 @@ import org.apache.dubbo.rpc.cluster.support.FailoverCluster;
  * <a href="http://en.wikipedia.org/wiki/Computer_cluster">Cluster</a>
  * <a href="http://en.wikipedia.org/wiki/Fault-tolerant_system">Fault-Tolerant</a>
  *
+ * 此接口仅用于生成 ClusterInvoker，ClusterInvoker 是集群容错组件：
+ *      - Failover Cluster - 失败自动切换
+ *      - Failfast Cluster - 快速失败
+ *      - Failsafe Cluster - 失败安全
+ *      - Failback Cluster - 失败自动恢复
+ *      - Forking Cluster - 并行调用多个服务提供者
+ *
+ * 详情参见：https://dubbo.apache.org/zh/docs/v2.7/dev/source/cluster/#m-zhdocsv27devsourcecluster
  */
 @SPI(Cluster.DEFAULT)
 public interface Cluster {

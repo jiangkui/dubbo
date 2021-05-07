@@ -63,11 +63,19 @@ public abstract class Proxy {
      * @return Proxy instance.
      */
     public static Proxy getProxy(Class<?>... ics) {
+        // 调用重载方法
         return getProxy(ClassUtils.getClassLoader(Proxy.class), ics);
     }
 
     /**
      * Get proxy.
+     *
+     * 详情参见：https://dubbo.apache.org/zh/docs/v2.7/dev/source/refer-service/#32-%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1
+     *
+     * 大家在阅读这段代码时，要搞清楚 ccp 和 ccm 的用途，不然会被搞晕。
+     * ccp 用于为服务接口生成代理类，比如我们有一个 DemoService 接口，这个接口代理类就是由 ccp 生成的。
+     * ccm 则是用于为 org.apache.dubbo.common.bytecode.Proxy 抽象类生成子类，主要是实现 Proxy 类的抽象方法。
+     * 下面以 org.apache.dubbo.demo.DemoService 这个接口为例，来看一下该接口代理类代码大致是怎样的（忽略 EchoService 接口）
      *
      * @param cl  class loader.
      * @param ics interface class array.
@@ -79,26 +87,32 @@ public abstract class Proxy {
         }
 
         StringBuilder sb = new StringBuilder();
+        // 遍历接口列表
         for (int i = 0; i < ics.length; i++) {
             String itf = ics[i].getName();
+            // 检测类型是否为接口
             if (!ics[i].isInterface()) {
                 throw new RuntimeException(itf + " is not a interface.");
             }
 
             Class<?> tmp = null;
             try {
+                // 重新加载接口类
                 tmp = Class.forName(itf, false, cl);
             } catch (ClassNotFoundException e) {
             }
 
+            // 检测接口是否相同，这里 tmp 有可能为空
             if (tmp != ics[i]) {
                 throw new IllegalArgumentException(ics[i] + " is not visible from class loader");
             }
 
+            // 拼接接口全限定名，分隔符为 ;
             sb.append(itf).append(';');
         }
 
         // use interface class name list as key.
+        // 使用拼接后的接口名作为 key
         String key = sb.toString();
 
         // get cache by class loader.
@@ -110,6 +124,7 @@ public abstract class Proxy {
         Proxy proxy = null;
         synchronized (cache) {
             do {
+                // 从缓存中获取 Reference<Proxy> 实例
                 Object value = cache.get(key);
                 if (value instanceof Reference<?>) {
                     proxy = (Proxy) ((Reference<?>) value).get();
@@ -118,12 +133,15 @@ public abstract class Proxy {
                     }
                 }
 
+                // 并发控制，保证只有一个线程可以进行后续操作
                 if (value == PENDING_GENERATION_MARKER) {
                     try {
+                        // 其他线程在此处进行等待
                         cache.wait();
                     } catch (InterruptedException e) {
                     }
                 } else {
+                    // 放置标志位到缓存中，并跳出 while 循环进行后续操作
                     cache.put(key, PENDING_GENERATION_MARKER);
                     break;
                 }
@@ -135,24 +153,30 @@ public abstract class Proxy {
         String pkg = null;
         ClassGenerator ccp = null, ccm = null;
         try {
+            // 创建 ClassGenerator 对象
             ccp = ClassGenerator.newInstance(cl);
 
             Set<String> worked = new HashSet<>();
             List<Method> methods = new ArrayList<>();
 
             for (int i = 0; i < ics.length; i++) {
+                // 检测接口访问级别是否为 protected 或 private
                 if (!Modifier.isPublic(ics[i].getModifiers())) {
+                    // 获取接口包名
                     String npkg = ics[i].getPackage().getName();
                     if (pkg == null) {
                         pkg = npkg;
                     } else {
                         if (!pkg.equals(npkg)) {
+                            // 非 public 级别的接口必须在同一个包下，否者抛出异常
                             throw new IllegalArgumentException("non-public interfaces from different packages");
                         }
                     }
                 }
+                // 添加接口到 ClassGenerator 中
                 ccp.addInterface(ics[i]);
 
+                // 遍历接口方法
                 for (Method method : ics[i].getMethods()) {
                     String desc = ReflectUtils.getDesc(method);
                     if (worked.contains(desc) || Modifier.isStatic(method.getModifiers())) {

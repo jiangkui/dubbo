@@ -40,11 +40,18 @@ public class FailfastClusterInvoker<T> extends AbstractClusterInvoker<T> {
         super(directory);
     }
 
+    /**
+     * 快速失败：只会进行一次调用，失败后立即抛出异常。适用于幂等操作，比如新增记录。
+     *
+     * 原文：https://dubbo.apache.org/zh/docs/v2.7/dev/source/cluster/#m-zhdocsv27devsourcecluster
+     */
     @Override
     public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         checkInvokers(invokers, invocation);
+        // 选择 Invoker
         Invoker<T> invoker = select(loadbalance, invocation, invokers, null);
         try {
+            // 调用
             return invoker.invoke(invocation);
         } catch (Throwable e) {
             if (e instanceof RpcException && ((RpcException) e).isBiz()) { // biz exception.

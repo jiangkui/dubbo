@@ -61,7 +61,7 @@ public class MigrationRuleHandler<T> {
         } else {
             switch (rule.getStep()) {
                 case APPLICATION_FIRST:
-                    migrationInvoker.migrateToServiceDiscoveryInvoker(false);// 有不少内容
+                    migrationInvoker.migrateToServiceDiscoveryInvoker(false);// 走这里
                     break;
                 case FORCE_APPLICATION:
                     migrationInvoker.migrateToServiceDiscoveryInvoker(true);

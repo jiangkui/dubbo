@@ -109,7 +109,10 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
     @Override
     public synchronized void migrateToServiceDiscoveryInvoker(boolean forceMigrate) { // false
         if (!forceMigrate) {
+            // 刷新 服务发现的 Invoker，即 DynamicDirectory
             refreshServiceDiscoveryInvoker();
+
+            // 刷新 InterfaceInvoker，即 RegistryDirectory
             refreshInterfaceInvoker();
             setListener(invoker, () -> {
                 this.compareAddresses(invoker, serviceDiscoveryInvoker);
@@ -288,6 +291,7 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Re-subscribing instance addresses, current interface " + type.getName());
             }
+            // 走RegistryProtocol.getServiceDiscoveryInvoker()
             serviceDiscoveryInvoker = registryProtocol.getServiceDiscoveryInvoker(cluster, registry, type, url);
 
             if (migrationMultiRegsitry) {
@@ -325,6 +329,7 @@ public class MigrationInvoker<T> implements MigrationClusterInvoker<T> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Re-subscribing interface addresses for interface " + type.getName());
             }
+            // 走RegistryProtocol.getInvoker()
             invoker = registryProtocol.getInvoker(cluster, registry, type, url);
 
             if (migrationMultiRegsitry) {

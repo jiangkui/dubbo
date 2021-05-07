@@ -22,7 +22,7 @@ import org.apache.dubbo.rpc.cluster.support.wrapper.AbstractCluster;
 
 /**
  * {@link FailoverClusterInvoker}
- *
+ * 失败自动切换
  */
 public class FailoverCluster extends AbstractCluster {
 

@@ -85,17 +85,20 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
     protected Result doInvoke(final Invocation invocation) throws Throwable {
         RpcInvocation inv = (RpcInvocation) invocation;
         final String methodName = RpcUtils.getMethodName(invocation);
+        // 设置 path 和 version 到 attachment 中
         inv.setAttachment(PATH_KEY, getUrl().getPath());
         inv.setAttachment(VERSION_KEY, version);
 
         ExchangeClient currentClient;
-        // 获取 client
+        // 从 clients 数组中获取 ExchangeClient
         if (clients.length == 1) {
             currentClient = clients[0];
         } else {
             currentClient = clients[index.getAndIncrement() % clients.length];
         }
         try {
+            // 无论同步还是异步，一律使用异步模型了。
+            // isOneway 为 true，表示“单向”通信
             boolean isOneway = RpcUtils.isOneway(getUrl(), invocation);
             int timeout = calculateTimeout(invocation, methodName);
             invocation.put(TIMEOUT_KEY, timeout);
@@ -103,10 +106,16 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
                 // 是单向的，不需要返回结果
                 boolean isSent = getUrl().getMethodParameter(methodName, Constants.SENT_KEY, false);
                 currentClient.send(inv, isSent);
+                // 返回一个空的 RpcResult
                 return AsyncRpcResult.newDefaultAsyncResult(invocation);
             } else {
                 // 不是单向的，需要获取返回结果
                 ExecutorService executor = getCallbackExecutor(getUrl(), inv);
+                // 发送请求，并得到一个 ResponseFuture 实例，可以详细看内部具体实现：DefaultFuture，是根据请求id来获取响应结果的。
+                // fixme jiangkui 两个问题：1、如何获取返回结果的。2、request 如何通过 rpc 发送的，具体的 handler 流程梳理出来。
+                // fixme jiangkui 两个问题：1、如何获取返回结果的。2、request 如何通过 rpc 发送的，具体的 handler 流程梳理出来。
+                // fixme jiangkui 两个问题：1、如何获取返回结果的。2、request 如何通过 rpc 发送的，具体的 handler 流程梳理出来。
+                // fixme jiangkui 两个问题：1、如何获取返回结果的。2、request 如何通过 rpc 发送的，具体的 handler 流程梳理出来。
                 CompletableFuture<AppResponse> appResponseFuture =
                         currentClient.request(inv, timeout, executor).thenApply(obj -> (AppResponse) obj);
                 // save for 2.6.x compatibility, for example, TraceFilter in Zipkin uses com.alibaba.xxx.FutureAdapter

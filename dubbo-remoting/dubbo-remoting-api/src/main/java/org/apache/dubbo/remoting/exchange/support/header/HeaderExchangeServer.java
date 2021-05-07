@@ -208,6 +208,7 @@ public class HeaderExchangeServer implements ExchangeServer {
 
     @Override
     public void reset(URL url) {
+        // 貌似重置了一些超时时间等相关配置。
         server.reset(url);
         try {
             int currHeartbeat = getHeartbeat(getUrl());

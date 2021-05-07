@@ -28,6 +28,8 @@ import java.util.List;
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Routing">Routing</a>
  *
+ * 服务路由：https://dubbo.apache.org/zh/docs/v2.7/dev/source/router/
+ *
  * @see org.apache.dubbo.rpc.cluster.Cluster#join(Directory)
  * @see org.apache.dubbo.rpc.cluster.Directory#list(Invocation)
  */

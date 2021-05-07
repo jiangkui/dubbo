@@ -106,6 +106,8 @@ public abstract class AbstractProtocol implements Protocol {
 
     /**
      * 引用服务
+     *
+     * https://dubbo.apache.org/zh/docs/v2.7/dev/source/refer-service/#32-%E5%BC%95%E7%94%A8%E6%9C%8D%E5%8A%A1
      */
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {

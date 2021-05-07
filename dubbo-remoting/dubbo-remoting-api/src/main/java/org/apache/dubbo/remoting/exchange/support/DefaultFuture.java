@@ -79,9 +79,13 @@ public class DefaultFuture extends CompletableFuture<Object> {
     private DefaultFuture(Channel channel, Request request, int timeout) {
         this.channel = channel;
         this.request = request;
+
+        // 获取请求 id，这个 id 很重要，后面还会见到，参见 getFuture() 方法。
         this.id = request.getId();
         this.timeout = timeout > 0 ? timeout : channel.getUrl().getPositiveParameter(TIMEOUT_KEY, DEFAULT_TIMEOUT);
         // put into waiting map.
+
+        // 存储 <requestId, DefaultFuture> 映射关系到 FUTURES 中
         FUTURES.put(id, this);
         CHANNELS.put(id, channel);
     }
@@ -117,6 +121,7 @@ public class DefaultFuture extends CompletableFuture<Object> {
     }
 
     public static DefaultFuture getFuture(long id) {
+        // 通过 id 查找对应的Feature
         return FUTURES.get(id);
     }
 

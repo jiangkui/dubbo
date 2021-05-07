@@ -465,7 +465,10 @@ public class RegistryProtocol implements Protocol {
     }
 
     /**
-     * 通过 refer 来构建 Invoker 实体
+     * 通过 refer 来构建 Invoker 实体，这里面包含了对 Cluster、Directory、等接口的处理。
+     *
+     * 面代码首先为 url 设置协议头，然后根据 url 参数加载注册中心实例。然后获取 group 配置，根据 group 配置决定 doRefer 第一个参数的类型。
+     *
      * @param type org.apache.dubbo.rpc.service.GenericService
      * @param url zookeeper://127.0.0.1:2181/org.apache.dubbo.registry.RegistryService?application=dubbo-demo-api-consumer&dubbo=2.0.2&pid=4564&refer=application%3Ddubbo-demo-api-consumer%26dubbo%3D2.0.2%26generic%3Dtrue%26interface%3Dorg.apache.dubbo.demo.DemoService%26pid%3D4564%26register.ip%3D192.168.1.102%26side%3Dconsumer%26sticky%3Dfalse%26timestamp%3D1620292813390&timestamp=1620292813436
      * @return
@@ -570,6 +573,7 @@ public class RegistryProtocol implements Protocol {
     }
 
     public <T> ClusterInvoker<T> getServiceDiscoveryInvoker(Cluster cluster, Registry registry, Class<T> type, URL url) {
+        // DynamicDirectory 与 RegistryDirectory 有啥区别？暂时理解成一样的吧。应该不是一个东西，具体功能再看。
         DynamicDirectory<T> directory = new ServiceDiscoveryRegistryDirectory<>(type, url);
         return doCreateInvoker(directory, cluster, registry, type);
     }
@@ -580,19 +584,35 @@ public class RegistryProtocol implements Protocol {
         return doCreateInvoker(directory, cluster, registry, type);
     }
 
+    /**
+     * doRefer 方法创建一个 RegistryDirectory 实例，然后生成服务者消费者链接，并向注册中心进行注册。
+     *
+     * 注册完毕后，紧接着订阅 providers、configurators、routers 等节点下的数据。
+     *
+     * 完成订阅后，RegistryDirectory 会收到这几个节点下的子节点信息。
+     *
+     * 由于一个服务可能部署在多台服务器上，这样就会在 providers 产生多个节点，这个时候就需要 Cluster 将多个服务节点合并为一个，并生成一个 Invoker。
+     */
     protected <T> ClusterInvoker<T> doCreateInvoker(DynamicDirectory<T> directory, Cluster cluster, Registry registry, Class<T> type) {
+        // 设置注册中心和协议
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
+
         // all attributes of REFER_KEY
         Map<String, String> parameters = new HashMap<String, String>(directory.getConsumerUrl().getParameters());
+        // 生成服务消费者链接
         URL urlToRegistry = new URL(CONSUMER_PROTOCOL, parameters.remove(REGISTER_IP_KEY), 0, type.getName(), parameters);
         if (directory.isShouldRegister()) {
             directory.setRegisteredConsumerUrl(urlToRegistry);
+            // 注册服务消费者，在 consumers 目录下新节点
             registry.register(directory.getRegisteredConsumerUrl());//consumer://192.168.1.102/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&category=consumers&check=false&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=10237&side=consumer&sticky=false&timestamp=1620301118438
         }
-        directory.buildRouterChain(urlToRegistry);// 走：DynamicDirectory
+        directory.buildRouterChain(urlToRegistry);
+
+        // 订阅 providers、configurators、routers 等节点数据
         directory.subscribe(toSubscribeUrl(urlToRegistry));
 
+        // 一个注册中心可能有多个服务提供者，因此这里需要将多个服务提供者合并为一个
         return (ClusterInvoker<T>) cluster.join(directory);
     }
 

@@ -448,6 +448,8 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
         MetadataUtils.publishServiceDefinition(consumerURL);
 
         // create service proxy
+        // 这里在执行的时候，先执行的是 MockClusterInvoker.invoke --> FailoverClusterInvoker.invoke
+        // 是在生成 Proxy 时处理的。详情参见：https://dubbo.apache.org/zh/docs/v2.7/dev/source/service-invoking-process/
         return (T) PROXY_FACTORY.getProxy(invoker, ProtocolUtils.isGeneric(generic));
     }
 

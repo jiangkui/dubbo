@@ -42,14 +42,27 @@ public class FailsafeClusterInvoker<T> extends AbstractClusterInvoker<T> {
         super(directory);
     }
 
+    /**
+     * 失败安全：当调用过程中出现异常时，FailsafeClusterInvoker 仅会打印异常，而不会抛出异常。适用于写入审计日志等操作。
+     *
+     * 原文：https://dubbo.apache.org/zh/docs/v2.7/dev/source/cluster/#m-zhdocsv27devsourcecluster
+     * @param invocation
+     * @param invokers
+     * @param loadbalance
+     * @return
+     * @throws RpcException
+     */
     @Override
     public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         try {
             checkInvokers(invokers, invocation);
+            // 选择 Invoker
             Invoker<T> invoker = select(loadbalance, invocation, invokers, null);
             return invoker.invoke(invocation);
         } catch (Throwable e) {
+            // 打印错误日志，但不抛出
             logger.error("Failsafe ignore exception: " + e.getMessage(), e);
+            // 返回空结果忽略错误
             return AsyncRpcResult.newDefaultAsyncResult(null, null, invocation); // ignore
         }
     }

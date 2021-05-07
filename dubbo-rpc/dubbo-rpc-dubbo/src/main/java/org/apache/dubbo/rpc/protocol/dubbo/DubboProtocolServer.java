@@ -52,6 +52,7 @@ public class DubboProtocolServer implements ProtocolServer {
 
     @Override
     public void reset(URL url) {
+        // 查看 HeaderExchangeServer 实现
         server.reset(url);
     }
 
