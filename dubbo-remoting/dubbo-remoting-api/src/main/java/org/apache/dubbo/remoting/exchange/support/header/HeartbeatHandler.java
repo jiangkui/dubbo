@@ -61,6 +61,9 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
         handler.sent(channel, message);
     }
 
+    /**
+     * 如果是心跳消息，则拦截处理
+     */
     @Override
     public void received(Channel channel, Object message) throws RemotingException {
         setReadTimestamp(channel);
@@ -87,6 +90,19 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
             }
             return;
         }
+        /*
+            `SPI：org.apache.dubbo.remoting.Dispatcher`
+                - >all=org.apache.dubbo.remoting.transport.dispatcher.all.AllDispatcher（默认） --> 所有消息都派发到线程池，包括请求，响应，连接事件，断开事件等
+                   direct=org.apache.dubbo.remoting.transport.dispatcher.direct.DirectDispatcher --> 所有消息都不派发到线程池，全部在 IO 线程上直接执行
+                   message=org.apache.dubbo.remoting.transport.dispatcher.message.MessageOnlyDispatcher --> 只有请求和响应消息派发到线程池，其它消息均在 IO 线程上执行
+                   execution=org.apache.dubbo.remoting.transport.dispatcher.execution.ExecutionDispatcher --> 只有请求消息派发到线程池，不含响应。其它消息均在 IO 线程上执行
+                   connection=org.apache.dubbo.remoting.transport.dispatcher.connection.ConnectionOrderedDispatcher --> 在 IO 线程上，将连接断开事件放入队列，有序逐个执行，其它消息派发到线程池
+                - IO线程：Dubbo 把底层通信框架中接收请求的线程称为 IO 线程
+                - 线程派发：如果处理比较耗时，则需要用线程池来处理，原因是：IO 线程主要用于接收请求，如果 IO 线程被占满，将导致它不能接收新的请求。
+                - [Dubbo官方文档：2.3.2.1 线程派发模型](https://dubbo.apache.org/zh/docs/v2.7/dev/source/service-invoking-process/#2321-%E7%BA%BF%E7%A8%8B%E6%B4%BE%E5%8F%91%E6%A8%A1%E5%9E%8B)
+
+            这里是：AllDispatcher(创建 AllChannelHandler) --> AllChannelHandler#received()
+         */
         handler.received(channel, message);
     }
 

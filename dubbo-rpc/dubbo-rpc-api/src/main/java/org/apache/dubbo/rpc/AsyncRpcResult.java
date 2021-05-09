@@ -181,6 +181,9 @@ public class AsyncRpcResult implements Result {
         return responseFuture.get(timeout, unit);
     }
 
+    /**
+     * 获取返回结果时，会通过 InvocationHandler#invoke() 调用到这里。
+     */
     @Override
     public Object recreate() throws Throwable {
         RpcInvocation rpcInvocation = (RpcInvocation) invocation;

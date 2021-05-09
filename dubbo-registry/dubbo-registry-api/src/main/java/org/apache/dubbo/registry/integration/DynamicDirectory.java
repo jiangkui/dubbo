@@ -211,6 +211,7 @@ public abstract class DynamicDirectory<T> extends AbstractDirectory<T> implement
     }
 
     public void buildRouterChain(URL url) {
+        // 构造 Router 链路
         this.setRouterChain(RouterChain.buildChain(url));
     }
 

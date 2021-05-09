@@ -56,6 +56,7 @@ public class NettyServerHandler extends ChannelDuplexHandler {
             throw new IllegalArgumentException("handler == null");
         }
         this.url = url;
+        // 这里的 handler 类型为 NettyServer
         this.handler = handler;
     }
 
@@ -95,13 +96,19 @@ public class NettyServerHandler extends ChannelDuplexHandler {
     }
 
     /**
-     * 通道有读取事件时，触发
+     * 通道有读取事件时，触发。NettyServer 的 decoder --> ExchangeCodec#decode()
+     *
+     * 解码器将数据包解析成 Request 对象后，NettyHandler 的 messageReceived 方法紧接着会收到这个对象，并将这个对象继续向下传递。
+     * 这期间该对象会被依次传递给 NettyServer、MultiMessageHandler、HeartbeatHandler 以及 AllChannelHandler。
+     * 最后由 AllChannelHandler 将该对象封装到 Runnable 实现类对象中，并将 Runnable 放入线程池中执行后续的调用逻辑。
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         // 连接成功后添加netty的Channel和dubbo的NettyChannel之间的映射关系
+        // 获取 NettyChannel
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
-        // AbstractPeer.received()
+        // 继续向下调用
+        // AbstractPeer#received()
         handler.received(channel, msg);
     }
 

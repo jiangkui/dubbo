@@ -37,6 +37,8 @@ import static org.apache.dubbo.rpc.protocol.dubbo.Constants.LAZY_CONNECT_INITIAL
  * dubbo protocol support class.
  *
  * 带有引用计数功能的 ExchangeClient
+ *
+ * ReferenceCountExchangeClient 内部定义了一个引用计数变量 referenceCount，每当该对象被引用一次 referenceCount 都会进行自增。每当 close 方法被调用时，referenceCount 进行自减。ReferenceCountExchangeClient 内部仅实现了一个引用计数的功能，其他方法并无复杂逻辑，均是直接调用被装饰对象的相关方法。
  */
 @SuppressWarnings("deprecation")
 final class ReferenceCountExchangeClient implements ExchangeClient {
@@ -48,6 +50,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     public ReferenceCountExchangeClient(ExchangeClient client) {
         this.client = client;
+        // 引用计数自增
         referenceCount.incrementAndGet();
         this.url = client.getUrl();
     }
@@ -157,6 +160,7 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     @Override
     public void close(int timeout) {
+        // referenceCount 自减
         if (referenceCount.decrementAndGet() <= 0) {
             if (timeout == 0) {
                 client.close();
@@ -202,6 +206,8 @@ final class ReferenceCountExchangeClient implements ExchangeClient {
 
     /**
      * The reference count of current ExchangeClient, connection will be closed if all invokers destroyed.
+     *
+     * 引用计数自增，该方法由外部调用
      */
     public void incrementAndGetCount() {
         referenceCount.incrementAndGet();

@@ -106,7 +106,7 @@ public class MigrationRuleListener implements RegistryProtocolListener, Configur
         MigrationRuleHandler<?> migrationListener = new MigrationRuleHandler<>(migrationInvoker);
         listeners.add(migrationListener);
 
-        // 这里面有不少逻辑
+        // 走这里
         migrationListener.doMigrate(rawRule);
     }
 

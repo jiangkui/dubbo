@@ -42,6 +42,8 @@ import static org.apache.dubbo.remoting.utils.UrlUtils.getIdleTimeout;
 
 /**
  * DefaultMessageClient
+ *
+ * 封装了一些关于心跳检测的逻辑。用 HashedWheelTimer 进行心跳检测
  */
 public class HeaderExchangeClient implements ExchangeClient {
 
@@ -53,14 +55,21 @@ public class HeaderExchangeClient implements ExchangeClient {
     private HeartbeatTimerTask heartBeatTimerTask;
     private ReconnectTimerTask reconnectTimerTask;
 
+    /**
+     * @param client NettyClient
+     * @param startTimer
+     */
     public HeaderExchangeClient(Client client, boolean startTimer) {
         Assert.notNull(client, "Client can't be null");
         this.client = client;
+        // 创建 HeaderExchangeChannel 对象
         this.channel = new HeaderExchangeChannel(client);
 
+        // 以下代码均与心跳检测逻辑有关
         if (startTimer) {
             URL url = client.getUrl();
             startReconnectTask(url);
+            // 开启心跳检测定时器
             startHeartBeatTask(url);
         }
     }
@@ -192,6 +201,7 @@ public class HeaderExchangeClient implements ExchangeClient {
             AbstractTimerTask.ChannelProvider cp = () -> Collections.singletonList(HeaderExchangeClient.this);
             int heartbeat = getHeartbeat(url);
             long heartbeatTick = calculateLeastDuration(heartbeat);
+            // 心跳检测Task
             this.heartBeatTimerTask = new HeartbeatTimerTask(cp, heartbeatTick, heartbeat);
             IDLE_CHECK_TIMER.newTimeout(heartBeatTimerTask, heartbeatTick, TimeUnit.MILLISECONDS);
         }

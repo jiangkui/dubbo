@@ -328,6 +328,13 @@ public abstract class AbstractClusterInvoker<T> implements ClusterInvoker<T> {
                 leastactive=org.apache.dubbo.rpc.cluster.loadbalance.LeastActiveLoadBalance
                 consistenthash=org.apache.dubbo.rpc.cluster.loadbalance.ConsistentHashLoadBalance
                 shortestresponse=org.apache.dubbo.rpc.cluster.loadbalance.ShortestResponseLoadBalance
+
+            注意这里内部是根据 Provider Invoker 的 URL 来实例化 LoadBalance，原因如下：
+            - 经验之谈：实际使用过程中发现，服务提供方比消费方更清楚，但这些配置项是在消费方执行时才用到的。
+            - 新版本，就加入了在服务提供方也能配这些参数，通过注册中心传递到消费方，做为参考值，如果消费方没有配置，就以提供方的配置为准，相当于消费方继承了提供方的建议配置值。
+            - 而注册中心在传递配置时，也可以在中途修改配置，这样就达到了治理的目的
+            - 继承关系相当于：服务消费者 –> 注册中心 –> 服务提供者
+            - [官方文档：配置设计 -- 配置继承](https://dubbo.apache.org/zh/docs/v2.7/dev/principals/configuration/#%E9%85%8D%E7%BD%AE%E7%BB%A7%E6%89%BF)
          */
         LoadBalance loadbalance = initLoadBalance(invokers, invocation);
         RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);

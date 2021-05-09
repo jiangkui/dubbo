@@ -174,11 +174,13 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
         if (needReconnect && !isConnected()) {
             connect();
         }
+        // 创建了一个 NettyChannel
         Channel channel = getChannel();
         //TODO Can the value returned by getChannel() be null? need improvement.
         if (channel == null || !channel.isConnected()) {
             throw new RemotingException(this, "message can not send, because channel is closed . url:" + getUrl());
         }
+        // 走这里 NettyChannel#send(message, sent)
         channel.send(message, sent);
     }
 

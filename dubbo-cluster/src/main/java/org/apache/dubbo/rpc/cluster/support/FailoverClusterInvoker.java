@@ -88,7 +88,7 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 checkWhetherDestroyed();
 
                 // 在进行重试前重新列举 Invoker，这样做的好处是，如果某个服务挂了，
-                // 通过调用 list 可得到最新可用的 Invoker 列表
+                // 通过调用 Directory 可得到最新可用的 List<Invoker>
                 copyInvokers = list(invocation);
                 // check again
                 // 对 copyinvokers 进行判空检查

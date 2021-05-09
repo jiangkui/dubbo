@@ -82,7 +82,7 @@ final public class NettyCodecAdapter {
             Channel ch = ctx.channel();
             NettyChannel channel = NettyChannel.getOrAddChannel(ch, url, handler);
             // 使用具体的协议进行编码
-            // 后续流程如何？ 如何找到对应的 Service 发送？
+            // 后续流程如何？ 如何找到对应的 Service 发送？DubboCountCodec
             codec.encode(channel, buffer, msg);
         }
     }

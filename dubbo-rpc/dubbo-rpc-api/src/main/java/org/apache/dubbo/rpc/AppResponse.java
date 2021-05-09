@@ -75,6 +75,9 @@ public class AppResponse implements Result {
         this.exception = exception;
     }
 
+    /**
+     * feature.get() 拿到返回结果后，会走到之类。
+     */
     @Override
     public Object recreate() throws Throwable {
         if (exception != null) {

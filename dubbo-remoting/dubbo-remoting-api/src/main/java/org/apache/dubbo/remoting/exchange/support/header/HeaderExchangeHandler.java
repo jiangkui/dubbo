@@ -77,10 +77,14 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     /**
      * 处理请求，并发送响应
+     *
+     * 对于双向通信，HeaderExchangeHandler 首先向后进行调用，得到调用结果。然后将调用结果封装到 Response 对象中，最后再将该对象返回给服务消费方。
+     *
+     * 如果请求不合法，或者调用失败，则将错误信息封装到 Response 对象中，并返回给服务消费方。
      */
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
         Response res = new Response(req.getId(), req.getVersion());
-        // 解码失败处理
+        // 检测请求是否合法，不合法则返回状态码为 BAD_REQUEST 的响应
         if (req.isBroken()) {
             Object data = req.getData();
 
@@ -93,18 +97,22 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                 msg = data.toString();
             }
             res.setErrorMessage("Fail to decode request due to: " + msg);
+            // 设置 BAD_REQUEST 状态
             res.setStatus(Response.BAD_REQUEST);
 
             channel.send(res);
             return;
         }
         // find handler by message class.
+        // 获取 data 字段值，也就是 RpcInvocation 对象
         Object msg = req.getData();
         try {
-            // 请求处理应答，这个 handler 是 org.apache.dubbo.rpc.protocol.dubbo.DubboProtocol#requestHandler
+            // 请求处理应答，这个 handler 是 DubboProtocol.requestHandler#reply()
+            // 继续向下调用
             CompletionStage<Object> future = handler.reply(channel, msg);
             future.whenComplete((appResult, t) -> {
                 try {
+                    // 设置 状态码 & 调用结果
                     if (t == null) {
                         res.setStatus(Response.OK);
                         res.setResult(appResult);
@@ -112,13 +120,18 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                         res.setStatus(Response.SERVICE_ERROR);
                         res.setErrorMessage(StringUtils.toString(t));
                     }
-                    // 发送返回结果：AbstractPeer#send
+                    // 发送返回结果：HeaderExchangeChannel#send()
+                    // fixme jiangkui 这里之后的逻辑是啥？？？
+                    // fixme jiangkui 这里之后的逻辑是啥？？？
+                    // fixme jiangkui 这里之后的逻辑是啥？？？
+                    // fixme jiangkui 这里之后的逻辑是啥？？？
                     channel.send(res);
                 } catch (RemotingException e) {
                     logger.warn("Send result to consumer failed, channel is " + channel + ", msg is " + e);
                 }
             });
         } catch (Throwable e) {
+            // 若调用过程出现异常，则设置 SERVICE_ERROR，表示服务端异常
             res.setStatus(Response.SERVICE_ERROR);
             res.setErrorMessage(StringUtils.toString(e));
             channel.send(res);
@@ -185,11 +198,12 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                 // 处理事件，判断是否是只读请求并设置只读标记
                 handlerEvent(channel, request);
             } else {
+                // 双向通信
                 if (request.isTwoWay()) {
-                    // 处理请求，获得响应，并回复相应
+                    // 向后调用服务，得到调用结果，并发送给 Consumer
                     handleRequest(exchangeChannel, request);
                 } else {
-                    // 回复响应
+                    // 如果是单向通信，仅向后调用指定服务即可，无需返回调用结果
                     handler.received(exchangeChannel, request.getData());
                 }
             }

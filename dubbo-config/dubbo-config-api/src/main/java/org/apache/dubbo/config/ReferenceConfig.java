@@ -389,7 +389,6 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                 }
             } else { // 从注册中心的配置中组装 URL // assemble URL from register center's configuration
                 // 协议不是 injvm
-                // if protocols not injvm checkRegistry
                 if (!LOCAL_PROTOCOL.equalsIgnoreCase(getProtocol())) {
                     checkRegistry();
                     List<URL> us = ConfigValidationUtils.loadRegistries(this, false);
@@ -417,10 +416,13 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
             } else { // 多个注册中心或多个服务提供者，或者两者混合
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
+
+                // 获取所有的 Invoker
                 for (URL url : urls) {
+                    // 通过 refprotocol 调用 refer 构建 Invoker，refprotocol 会在运行时
+                    // 根据 url 协议头加载指定的 Protocol 实例，并调用实例的 refer 方法
                     invokers.add(REF_PROTOCOL.refer(interfaceClass, url));
                     if (UrlUtils.isRegistry(url)) {
-                        // 最后一个注册中心 URL
                         registryURL = url; // use last registry url
                     }
                 }
@@ -428,7 +430,7 @@ public class ReferenceConfig<T> extends ReferenceConfigBase<T> {
                     // // 如果注册中心链接不为空，则将使用 ZoneAwareCluster
                     // for multi-subscription scenario, use 'zone-aware' policy by default
                     String cluster = registryURL.getParameter(CLUSTER_KEY, ZoneAwareCluster.NAME);
-                    // 创建 StaticDirectory 实例，并由 Cluster 对多个 Invoker 进行合并
+                    // 创建 StaticDirectory 实例(静态的 List<Invoker>，RegistryDirectory是动态的)，并由 Cluster 对多个 Invoker 进行合并
                     // The invoker wrap sequence would be: ZoneAwareClusterInvoker(StaticDirectory) -> FailoverClusterInvoker(RegistryDirectory, routing happens here) -> Invoker
                     invoker = Cluster.getCluster(cluster, false).join(new StaticDirectory(registryURL, invokers));
                 } else { // not a registry url, must be direct invoke.

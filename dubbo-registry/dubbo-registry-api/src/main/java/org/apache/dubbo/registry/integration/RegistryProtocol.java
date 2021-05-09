@@ -485,14 +485,14 @@ public class RegistryProtocol implements Protocol {
             return proxyFactory.getInvoker((T) registry, type, url);
         }
 
-        // group="a,b" or group="*"
         // url 查询字符串转换为 map
         Map<String, String> qs = StringUtils.parseQueryString(url.getParameterAndDecoded(REFER_KEY));
-        // 获取 group 配置
+        // 获取 group 配置，group="a,b" or group="*"
         String group = qs.get(GROUP_KEY);
         // 多个 group
         if (group != null && group.length() > 0) {
             if ((COMMA_SPLIT_PATTERN.split(group)).length > 1 || "*".equals(group)) {
+                // 通过 SPI 加载 MergeableCluster 实例，并调用 doRefer 继续执行服务引用逻辑
                 return doRefer(Cluster.getCluster(MergeableCluster.NAME), registry, type, url, qs);
             }
         }
@@ -512,7 +512,7 @@ public class RegistryProtocol implements Protocol {
             最终结构：MockClusterWrapper --> FailoverCluster
          */
         Cluster cluster = Cluster.getCluster(qs.get(CLUSTER_KEY));
-        // 创建引用
+        // 调用 doRefer 继续执行服务引用逻辑
         return doRefer(cluster, registry, type, url, qs);
     }
 
@@ -580,6 +580,7 @@ public class RegistryProtocol implements Protocol {
 
     public <T> ClusterInvoker<T> getInvoker(Cluster cluster, Registry registry, Class<T> type, URL url) {
         // FIXME, this method is currently not used, create the right registry before enable.
+        // 创建一个 RegistryDirectory 实例，然后生成服务者消费者链接，并向注册中心进行注册。
         DynamicDirectory<T> directory = new RegistryDirectory<>(type, url);
         return doCreateInvoker(directory, cluster, registry, type);
     }
@@ -605,8 +606,10 @@ public class RegistryProtocol implements Protocol {
         if (directory.isShouldRegister()) {
             directory.setRegisteredConsumerUrl(urlToRegistry);
             // 注册服务消费者，在 consumers 目录下新节点
+            // 调用的是 ListenerRegistryWrapper.register --> ServiceDiscoveryRegistry#doRegister
             registry.register(directory.getRegisteredConsumerUrl());//consumer://192.168.1.102/org.apache.dubbo.rpc.service.GenericService?application=dubbo-demo-api-consumer&category=consumers&check=false&dubbo=2.0.2&generic=true&interface=org.apache.dubbo.demo.DemoService&pid=10237&side=consumer&sticky=false&timestamp=1620301118438
         }
+        // 获取Router chain
         directory.buildRouterChain(urlToRegistry);
 
         // 订阅 providers、configurators、routers 等节点数据

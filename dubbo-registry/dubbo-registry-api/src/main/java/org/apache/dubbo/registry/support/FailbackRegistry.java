@@ -246,7 +246,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
     }
 
     /**
-     * 注册 provider 到 zk
+     * 注册 provider 到 zk，或者注册 Consumer 到 zk
      * @param url dubbo://11.0.94.189:20880/org.apache.dubbo.demo.DemoService?anyhost=true&application=dubbo-demo-api-provider&default=true&deprecated=false&dubbo=2.0.2&dynamic=true&generic=false&interface=org.apache.dubbo.demo.DemoService&methods=sayHello,sayHelloAsync&pid=31385&release=&side=provider&timestamp=1617590835442
      */
     @Override

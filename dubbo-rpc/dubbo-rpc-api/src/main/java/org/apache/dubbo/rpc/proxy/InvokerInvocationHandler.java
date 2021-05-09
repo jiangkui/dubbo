@@ -61,14 +61,32 @@ public class InvokerInvocationHandler implements InvocationHandler {
         }
     }
 
+    /**
+     * 详情参见：https://dubbo.apache.org/zh/docs/v2.7/dev/source/service-invoking-process/
+     *
+     * proxy 代理对象中，会生成这么一段代码：
+     *
+     *      public String sayHello(String string) {
+     *         // 将参数存储到 Object 数组中
+     *         Object[] arrobject = new Object[]{string};
+     *
+     *         // 调用 InvocationHandler 实现类的 invoke 方法得到调用结果
+     *         // 这段代码会调用到这个方法内
+     *         Object object = this.handler.invoke(this, methods[0], arrobject);
+     *         // 返回调用结果
+     *         return (String)object;
+     *     }
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // 拦截定义在 Object 类中的方法（未被子类重写），比如 wait/notify
         if (method.getDeclaringClass() == Object.class) {
             return method.invoke(invoker, args);
         }
         String methodName = method.getName();
         Class<?>[] parameterTypes = method.getParameterTypes();
         if (parameterTypes.length == 0) {
+            // 如果 toString、hashCode 和 equals 等方法被子类重写了，这里也直接调用
             if ("toString".equals(methodName)) {
                 return invoker.toString();
             } else if ("$destroy".equals(methodName)) {
@@ -92,6 +110,9 @@ public class InvokerInvocationHandler implements InvocationHandler {
             rpcInvocation.put(Constants.METHOD_MODEL, consumerModel.getMethodModel(method));
         }
 
+        // 关键点在这里
+        // invoker：MockClusterInvoker
+        // Result：AsyncRpcResult
         return invoker.invoke(rpcInvocation).recreate();
     }
 }

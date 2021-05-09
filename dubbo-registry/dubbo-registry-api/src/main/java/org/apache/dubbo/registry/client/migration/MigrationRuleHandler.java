@@ -35,7 +35,7 @@ public class MigrationRuleHandler<T> {
     private MigrationStep currentStep;
 
     /**
-     * 做迁移？
+     * 这段代码写的看不懂，里面有个主要的分之逻辑有具体功能，直接看分之逻辑吧。
      * @param rawRule
      */
     public void doMigrate(String rawRule) {
@@ -61,7 +61,8 @@ public class MigrationRuleHandler<T> {
         } else {
             switch (rule.getStep()) {
                 case APPLICATION_FIRST:
-                    migrationInvoker.migrateToServiceDiscoveryInvoker(false);// 走这里
+                    // 走这里 MigrationInvoker#migrateToServiceDiscoveryInvoker
+                    migrationInvoker.migrateToServiceDiscoveryInvoker(false);
                     break;
                 case FORCE_APPLICATION:
                     migrationInvoker.migrateToServiceDiscoveryInvoker(true);

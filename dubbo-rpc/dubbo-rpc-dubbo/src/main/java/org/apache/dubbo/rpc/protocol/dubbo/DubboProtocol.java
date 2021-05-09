@@ -47,6 +47,7 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.RpcInvocation;
 import org.apache.dubbo.rpc.protocol.AbstractProtocol;
+import org.apache.dubbo.rpc.proxy.AbstractProxyInvoker;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -112,7 +113,14 @@ public class DubboProtocol extends AbstractProtocol {
     private ExchangeHandler requestHandler = new ExchangeHandlerAdapter() {
 
         /**
-         * 回复
+         * 收到 Consumer 的请求，准备调用 Provider 的 实现
+         *
+         * 由 HeaderExchangeHandler#handleRequest() 调过来的
+         *
+         * @param channel
+         * @param message RpcInvocation
+         * @return
+         * @throws RemotingException
          */
         @Override
         public CompletableFuture<Object> reply(ExchangeChannel channel, Object message) throws RemotingException {
@@ -125,9 +133,10 @@ public class DubboProtocol extends AbstractProtocol {
 
             Invocation inv = (Invocation) message;
             // 通过 message 查找对应的 Invoker，方法调用时，会通过 channel --> exporterMap --> 查找到对应的 Exporter --> Invoker
+            // 获取 Invoker 实例
             Invoker<?> invoker = getInvoker(channel, inv);
             // need to consider backward-compatibility if it's a callback
-            // 如果它是回调，则需要考虑向后兼容性
+            // 回调相关，忽略
             if (Boolean.TRUE.toString().equals(inv.getObjectAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
                 String methodsStr = invoker.getUrl().getParameters().get("methods");
                 boolean hasMethod = false;
@@ -153,13 +162,14 @@ public class DubboProtocol extends AbstractProtocol {
                 }
             }
             RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
-            // 进行调用，这里的 Invoker 被包装了好几层。由 ProtocolFilterWrapper 包装的，参见：ProtocolFilterWrapper#buildInvokerChain
-            // ProtocolFilterWrapper：buildInvokerChain 会加入很多 filter，例如：EchoFilter、ClassLoaderFilter、GenericFIlter、ContextFilter、TraceFilter、TimeoutFilter、MonitorFilter、ExceptionFilter
-            // ProtocolListenerWrapper
-            // RegistryProtocol.InvokerDelegete
-            // 最终会调用到：JavassistProxyFactory生成的Wrapper包装类的invokeMethod方法，来真正调用我们提供的服务并获取返回结果
-            // 最后会用 AbstractPeer.send 把结果发回去
+            // 进行调用，这里的 Invoker 被包装了好几层。
+            // 先执行：FilterNode#invoke() 一共8个，由 ProtocolFilterWrapper#buildInvokerChain 创建
+            // 依次执行：EchoFilter、ClassLoaderFilter、GenericFIlter、ContextFilter、TraceFilter、TimeoutFilter、MonitorFilter、ExceptionFilter
+            // 最后执行：AbstractProxyInvoker#doInvoke() 由 JavassistProxyFactory#getInvoker() 创建
+            // 最终会到：JavassistProxyFactory生成的Wrapper包装类的invokeMethod方法，来真正调用我们提供的服务并获取返回结果
             Result result = invoker.invoke(inv);
+
+            // 由 HeaderExchangeHandler#handleRequest() 调过来的，它那边会拿到这个 Result
             return result.thenApply(Function.identity());
         }
 
@@ -264,6 +274,7 @@ public class DubboProtocol extends AbstractProtocol {
         String path = (String) inv.getObjectAttachments().get(PATH_KEY);
 
         // if it's callback service on client side
+        // 本地存根相关
         isStubServiceInvoke = Boolean.TRUE.toString().equals(inv.getObjectAttachments().get(STUB_EVENT_KEY));
         if (isStubServiceInvoke) {
             port = channel.getRemoteAddress().getPort();
@@ -277,6 +288,8 @@ public class DubboProtocol extends AbstractProtocol {
         }
 
         // 拼接 server key：org.apache.dubbo.demo.DemoService:20880
+        // 计算 service key，格式为 groupName/serviceName:serviceVersion:port。比如：
+        //   dubbo/com.alibaba.dubbo.demo.DemoService:1.0.0:20880
         String serviceKey = serviceKey(
                 port,
                 path,
@@ -284,6 +297,8 @@ public class DubboProtocol extends AbstractProtocol {
                 (String) inv.getObjectAttachments().get(GROUP_KEY)
         );
         // 获取对应的 invoker
+        // 从 exporterMap 查找与 serviceKey 相对应的 DubboExporter 对象，
+        // 服务导出过程中会将 <serviceKey, DubboExporter> 映射关系存储到 exporterMap 集合中
         DubboExporter<?> exporter = (DubboExporter<?>) exporterMap.get(serviceKey);
 
         if (exporter == null) {
@@ -291,6 +306,7 @@ public class DubboProtocol extends AbstractProtocol {
                     ", channel: consumer: " + channel.getRemoteAddress() + " --> provider: " + channel.getLocalAddress() + ", message:" + getInvocationWithoutData(inv));
         }
 
+        // 获取 Invoker 对象，并返回
         return exporter.getInvoker();
     }
 
