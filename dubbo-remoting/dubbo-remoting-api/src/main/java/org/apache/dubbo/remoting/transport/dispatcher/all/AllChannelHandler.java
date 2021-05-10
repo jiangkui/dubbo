@@ -69,6 +69,8 @@ public class AllChannelHandler extends WrappedChannelHandler {
      * - IO线程：Dubbo 把底层通信框架中接收请求的线程称为 IO 线程
      * - 线程派发：如果处理比较耗时，则需要用线程池来处理，原因是：IO 线程主要用于接收请求，如果 IO 线程被占满，将导致它不能接收新的请求。
      * - [Dubbo官方文档：2.3.2.1 线程派发模型](https://dubbo.apache.org/zh/docs/v2.7/dev/source/service-invoking-process/#2321-%E7%BA%BF%E7%A8%8B%E6%B4%BE%E5%8F%91%E6%A8%A1%E5%9E%8B)
+     *
+     * @param channel NettyChannel
      */
     @Override
     public void received(Channel channel, Object message) throws RemotingException {

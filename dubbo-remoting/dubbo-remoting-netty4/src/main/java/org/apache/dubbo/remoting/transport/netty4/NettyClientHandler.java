@@ -41,7 +41,7 @@ public class NettyClientHandler extends ChannelDuplexHandler {
 
     private final URL url;
 
-    private final ChannelHandler handler;
+    private final ChannelHandler handler; // NettyClient
 
     public NettyClientHandler(URL url, ChannelHandler handler) {
         if (url == null) {
@@ -77,9 +77,16 @@ public class NettyClientHandler extends ChannelDuplexHandler {
         }
     }
 
+    /**
+     * Consumer 接收 Provider 发送的 Result
+     * @param ctx
+     * @param msg
+     * @throws Exception
+     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
+        // NettyClient --> AbstractPeer#received()
         handler.received(channel, msg);
     }
 

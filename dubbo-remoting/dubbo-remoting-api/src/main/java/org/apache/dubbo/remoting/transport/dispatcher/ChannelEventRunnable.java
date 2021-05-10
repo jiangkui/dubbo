@@ -25,7 +25,7 @@ public class ChannelEventRunnable implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ChannelEventRunnable.class);
 
     private final ChannelHandler handler;
-    private final Channel channel;
+    private final Channel channel; // NettyChannel
     private final ChannelState state;
     private final Throwable exception;
     private final Object message;

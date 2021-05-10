@@ -45,7 +45,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
 
     private static final String CHANNEL_KEY = HeaderExchangeChannel.class.getName() + ".CHANNEL";
 
-    private final Channel channel;
+    private final Channel channel; // NettyClient
 
     private volatile boolean closed = false;
 
@@ -86,6 +86,10 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         }
     }
 
+    /**
+     * 向 Consumer 发送返回结果
+     * @param message AppResponse
+     */
     @Override
     public void send(Object message) throws RemotingException {
         send(message, false);
@@ -99,6 +103,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         if (message instanceof Request
                 || message instanceof Response
                 || message instanceof String) {
+            // channel 是 NettyClient#send()
             channel.send(message, sent);
         } else {
             Request request = new Request();
