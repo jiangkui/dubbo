@@ -57,6 +57,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
 
         needReconnect = url.getParameter(Constants.SEND_RECONNECT_KEY, false);
 
+        // 启动线程池
         initExecutor(url);
 
         try {

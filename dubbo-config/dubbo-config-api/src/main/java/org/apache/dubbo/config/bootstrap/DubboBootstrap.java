@@ -526,6 +526,8 @@ public class DubboBootstrap extends GenericEventListener {
 
         ApplicationModel.initFrameworkExts();
 
+        // 这里会启动 Dubbo 的分布式配置中心，SPI是：DynamicConfigurationFactory
+        // 详情参见：https://dubbo.apache.org/zh/docs/v2.7/dev/impls/config-center/
         startConfigCenter();
 
         loadRemoteConfigs();
@@ -626,6 +628,7 @@ public class DubboBootstrap extends GenericEventListener {
         if (CollectionUtils.isNotEmpty(configCenters)) {
             CompositeDynamicConfiguration compositeDynamicConfiguration = new CompositeDynamicConfiguration();
             for (ConfigCenterConfig configCenter : configCenters) {
+                // 环境准备，里面有对 分布式配置中心的处理
                 compositeDynamicConfiguration.addConfiguration(prepareEnvironment(configCenter));
             }
             environment.setDynamicConfiguration(compositeDynamicConfiguration);
@@ -1029,11 +1032,18 @@ public class DubboBootstrap extends GenericEventListener {
     }
     /* serve for builder apis, end */
 
+    /**
+     * 环境准备
+     *
+     * @param configCenter 相关配置
+     * @return 分布式配置中心
+     */
     private DynamicConfiguration prepareEnvironment(ConfigCenterConfig configCenter) {
         if (configCenter.isValid()) {
             if (!configCenter.checkOrUpdateInited()) {
                 return null;
             }
+            // 根据 url 查找分布式配置中心
             DynamicConfiguration dynamicConfiguration = getDynamicConfiguration(configCenter.toUrl());
             String configContent = dynamicConfiguration.getProperties(configCenter.getConfigFile(), configCenter.getGroup());
 
