@@ -381,7 +381,7 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> implements NotifyL
                         enabled = url.getParameter(ENABLED_KEY, true);
                     }
                     if (enabled) {
-                        // 调用 refer 获取 Invoker
+                        // 调用 refer 获取 Invoker，走 AbstractProtocol#refer --> DubboProtocol#protocolBindingRefer
                         invoker = new InvokerDelegate<>(protocol.refer(serviceType, url), url, providerUrl);
                     }
                 } catch (Throwable t) {
@@ -606,6 +606,10 @@ public class RegistryDirectory<T> extends DynamicDirectory<T> implements NotifyL
         return false;
     }
 
+    /**
+     * 根据 url 配置，创建路由链，参见：RegistryProtocol#doCreateInvoker
+     * @param url
+     */
     public void buildRouterChain(URL url) {
         this.setRouterChain(RouterChain.buildChain(url));
     }

@@ -138,7 +138,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
     @Override
     public void connected(Channel channel) throws RemotingException {
         ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);
-        handler.connected(exchangeChannel);
+        handler.connected(exchangeChannel); // 走：DubboProtocol
     }
 
     @Override

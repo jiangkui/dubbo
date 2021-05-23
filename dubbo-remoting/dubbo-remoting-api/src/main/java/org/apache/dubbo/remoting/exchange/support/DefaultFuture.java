@@ -109,6 +109,7 @@ public class DefaultFuture extends CompletableFuture<Object> {
      * @return a new DefaultFuture
      */
     public static DefaultFuture newFuture(Channel channel, Request request, int timeout, ExecutorService executor) {
+        // 创建一个 Future，同时生成 requestId，并且存放到 Map内，后续拿到 Response 时，会根据 RequestId 查到对应的 Future。
         final DefaultFuture future = new DefaultFuture(channel, request, timeout);
         future.setExecutor(executor);
         // ThreadlessExecutor needs to hold the waiting future in case of circuit return.

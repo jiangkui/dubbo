@@ -113,7 +113,7 @@ final public class NettyCodecAdapter {
             do {
                 int saveReaderIndex = message.readerIndex();
                 // 进行解码，后续流程如何？
-                // response 如何找到对应的 Invoker 执行？
+                // response 如何找到对应的 Invoker 执行？ DubboCountCodec#decode
                 Object msg = codec.decode(channel, message);
                 if (msg == Codec2.DecodeResult.NEED_MORE_INPUT) {
                     message.readerIndex(saveReaderIndex);

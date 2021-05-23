@@ -103,7 +103,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         if (message instanceof Request
                 || message instanceof Response
                 || message instanceof String) {
-            // channel 是 NettyClient#send()
+            // channel 是 NettyClient --> AbstractClient#send
             channel.send(message, sent);
         } else {
             Request request = new Request();
@@ -142,6 +142,7 @@ final class HeaderExchangeChannel implements ExchangeChannel {
         req.setVersion(Version.getProtocolVersion());
         req.setTwoWay(true);
         req.setData(request);
+        // 创建一个 Future，同时生成 requestId，并且存放到 Map内，后续拿到 Response 时，会根据 RequestId 查到对应的 Future。
         DefaultFuture future = DefaultFuture.newFuture(channel, req, timeout, executor);
         try {
             // 这个 channel 是 NettyClient，详情参见：HeaderExchanger#connect()

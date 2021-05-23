@@ -49,6 +49,7 @@ public class AsyncToSyncInvoker<T> implements Invoker<T> {
 
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
+        // 走这里：AbstractInvoker#invoke
         Result asyncResult = invoker.invoke(invocation);
 
         try {
@@ -58,6 +59,7 @@ public class AsyncToSyncInvoker<T> implements Invoker<T> {
                  * must call {@link java.util.concurrent.CompletableFuture#get(long, TimeUnit)} because
                  * {@link java.util.concurrent.CompletableFuture#get()} was proved to have serious performance drop.
                  */
+                // 如果是同步模型，直接调用 asyncResult.get() 等待并获取结果。
                 asyncResult.get(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
             }
         } catch (InterruptedException e) {

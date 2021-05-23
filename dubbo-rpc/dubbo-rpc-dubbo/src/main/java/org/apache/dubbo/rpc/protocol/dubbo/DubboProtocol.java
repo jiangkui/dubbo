@@ -187,7 +187,7 @@ public class DubboProtocol extends AbstractProtocol {
         }
 
         @Override
-        public void connected(Channel channel) throws RemotingException {
+        public void connected(Channel channel) throws RemotingException { // channel：HeaderExchangeChannel
             invoke(channel, ON_CONNECT_KEY);
         }
 
@@ -199,6 +199,11 @@ public class DubboProtocol extends AbstractProtocol {
             invoke(channel, ON_DISCONNECT_KEY);
         }
 
+        /**
+         * Consumer 链接事件
+         * @param channel HeaderExchangeChannel
+         * @param methodKey Constants#ON_CONNECT_KEY
+         */
         private void invoke(Channel channel, String methodKey) {
             Invocation invocation = createInvocation(channel, channel.getUrl(), methodKey);
             if (invocation != null) {

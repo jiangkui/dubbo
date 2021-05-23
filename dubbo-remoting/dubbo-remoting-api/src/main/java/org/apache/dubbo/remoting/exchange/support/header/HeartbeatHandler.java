@@ -37,6 +37,9 @@ public class HeartbeatHandler extends AbstractChannelHandlerDelegate {
 
     public static final String KEY_WRITE_TIMESTAMP = "WRITE_TIMESTAMP";
 
+    /**
+     * @param handler AllChannelHandler，SPI：org.apache.dubbo.remoting.Dispatcher
+     */
     public HeartbeatHandler(ChannelHandler handler) {
         super(handler);
     }

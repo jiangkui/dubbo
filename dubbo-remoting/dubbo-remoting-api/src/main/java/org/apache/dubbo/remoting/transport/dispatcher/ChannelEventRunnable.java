@@ -24,7 +24,7 @@ import org.apache.dubbo.remoting.ChannelHandler;
 public class ChannelEventRunnable implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ChannelEventRunnable.class);
 
-    private final ChannelHandler handler;
+    private final ChannelHandler handler; // DecodeHandler
     private final Channel channel; // NettyChannel
     private final ChannelState state;
     private final Throwable exception;
@@ -34,6 +34,13 @@ public class ChannelEventRunnable implements Runnable {
         this(channel, handler, state, null);
     }
 
+    /**
+     *
+     * @param channel NettyChannel
+     * @param handler DecodeHandler
+     * @param state
+     * @param message
+     */
     public ChannelEventRunnable(Channel channel, ChannelHandler handler, ChannelState state, Object message) {
         this(channel, handler, state, message, null);
     }
@@ -69,6 +76,7 @@ public class ChannelEventRunnable implements Runnable {
             switch (state) {
             case CONNECTED:
                 try {
+                    // 走：AbstractChannelHandlerDelegate
                     handler.connected(channel);
                 } catch (Exception e) {
                     logger.warn("ChannelEventRunnable handle " + state + " operation error, channel is " + channel, e);

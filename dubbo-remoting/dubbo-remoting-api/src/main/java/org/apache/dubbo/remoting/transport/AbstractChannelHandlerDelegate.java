@@ -23,8 +23,11 @@ import org.apache.dubbo.remoting.RemotingException;
 
 public abstract class AbstractChannelHandlerDelegate implements ChannelHandlerDelegate {
 
-    protected ChannelHandler handler;
+    protected ChannelHandler handler; // AllChannelHandler，SPI：org.apache.dubbo.remoting.Dispatcher
 
+    /**
+     * @param handler AllChannelHandler，SPI：org.apache.dubbo.remoting.Dispatcher
+     */
     protected AbstractChannelHandlerDelegate(ChannelHandler handler) {
         Assert.notNull(handler, "handler == null");
         this.handler = handler;
@@ -40,6 +43,7 @@ public abstract class AbstractChannelHandlerDelegate implements ChannelHandlerDe
 
     @Override
     public void connected(Channel channel) throws RemotingException {
+        // 走：HeaderExchangeHandler
         handler.connected(channel);
     }
 
